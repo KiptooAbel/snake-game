@@ -1,20 +1,5 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import GameScreen from "../game";  // Use the new path
+import { Redirect } from 'expo-router';
 
-export default function HomeScreen() {
-  return (
-    <View style={styles.container}>
-      <GameScreen />
-    </View>
-  );
+export default function Index() {
+  return <Redirect href="/game" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#111",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
