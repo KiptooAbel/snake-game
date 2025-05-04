@@ -16,6 +16,12 @@ const ControlsContainer: React.FC = () => {
     handleDirectionChange
   } = useGame();
   
+  // Define a debug handler to ensure direction changes are being fired
+  const handleControlPress = (direction) => {
+    console.log("Control pressed:", direction); // Debug log
+    handleDirectionChange(direction);
+  };
+  
   return (
     <View style={styles.controlsContainer}>
       <View style={styles.buttonRow}>
@@ -41,7 +47,7 @@ const ControlsContainer: React.FC = () => {
       </View>
       
       {showControls && gameStarted && !gameOver && !isPaused && (
-        <ControlPad onDirectionPress={handleDirectionChange} />
+        <ControlPad onDirectionPress={handleControlPress} />
       )}
     </View>
   );

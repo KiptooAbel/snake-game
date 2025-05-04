@@ -1,5 +1,5 @@
 // GameContext.tsx - Context for managing game state and passing down handlers
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { ObstacleType } from '@/components/Obstacle';
 
 // Define obstacle position type
@@ -41,8 +41,7 @@ interface GameContextType {
   removeObstacle: (position: Position) => void;
   
   // Direction change callback
-  directionChangeCallback: ((direction: Position) => void) | null;
-  setDirectionChangeCallback: (callback: ((direction: Position) => void) | null) => void;
+  setDirectionChangeCallback: (callback: (direction: Position) => void) => void;
 }
 
 // Create the context with a default value
@@ -50,7 +49,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 // Provider component
 interface GameProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
@@ -64,54 +63,72 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [showControls, setShowControls] = useState(true);
   const [obstacles, setObstacles] = useState<ObstaclePosition[]>([]);
   
-  // Direction change callback - this will be set by the GameBoard component
-  const [directionChangeCallback, setDirectionChangeCallback] = useState<((direction: Position) => void) | null>(null);
+  // Reference to the direction change callback to ensure it persists
+  const directionChangeCallbackRef = useRef<((direction: Position) => void) | null>(null);
+  
+  // Set the direction change callback
+  const setDirectionChangeCallback = useCallback((callback: (direction: Position) => void) => {
+    console.log("Setting new direction callback in context");
+    directionChangeCallbackRef.current = callback;
+  }, []);
   
   // Game methods
-  const togglePause = () => setIsPaused(prev => !prev);
+  const togglePause = useCallback(() => {
+    setIsPaused(prev => !prev);
+  }, []);
   
-  const startGame = () => {
+  const startGame = useCallback(() => {
     setGameStarted(true);
     setGameOver(false);
-  };
+    setIsPaused(false);
+  }, []);
   
-  const endGame = () => {
+  const endGame = useCallback(() => {
     setGameOver(true);
-    if (score > highScore) {
-      setHighScore(score);
-    }
-  };
+    setScore(current => {
+      if (current > highScore) {
+        setHighScore(current);
+      }
+      return current;
+    });
+  }, [highScore]);
   
-  const restartGame = () => {
+  const restartGame = useCallback(() => {
     setScore(0);
     setGameOver(false);
     setIsPaused(false);
     setGameStarted(true);
     setObstacles([]); // Clear obstacles when restarting
-  };
+  }, []);
   
-  const toggleControls = () => setShowControls(prev => !prev);
+  const toggleControls = useCallback(() => {
+    setShowControls(prev => !prev);
+  }, []);
   
   // Add a new obstacle
-  const addObstacle = (obstacle: ObstaclePosition) => {
+  const addObstacle = useCallback((obstacle: ObstaclePosition) => {
     setObstacles(prev => [...prev, obstacle]);
-  };
+  }, []);
   
   // Remove an obstacle at a specific position
-  const removeObstacle = (position: Position) => {
+  const removeObstacle = useCallback((position: Position) => {
     setObstacles(prev => 
       prev.filter(obstacle => 
         obstacle.position.x !== position.x || obstacle.position.y !== position.y
       )
     );
-  };
+  }, []);
   
   // This function will be passed to the ControlPad component
-  const handleDirectionChange = (direction: Position) => {
-    if (directionChangeCallback) {
-      directionChangeCallback(direction);
+  const handleDirectionChange = useCallback((direction: Position) => {
+    console.log("Handling direction change in context:", direction);
+    if (directionChangeCallbackRef.current) {
+      console.log("Calling registered callback!");
+      directionChangeCallbackRef.current(direction);
+    } else {
+      console.log("No direction callback registered");
     }
-  };
+  }, []);
   
   // Create value object
   const value: GameContextType = {
@@ -139,8 +156,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     addObstacle,
     removeObstacle,
     
-    // Direction callback
-    directionChangeCallback,
+    // Direction callback setter
     setDirectionChangeCallback
   };
   

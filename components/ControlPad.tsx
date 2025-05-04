@@ -13,11 +13,26 @@ interface ControlPadProps {
 }
 
 export default function ControlPad({ onDirectionPress }: ControlPadProps) {
-  // Direction handlers
-  const handleUpPress = () => onDirectionPress({ x: 0, y: -1 });
-  const handleDownPress = () => onDirectionPress({ x: 0, y: 1 });
-  const handleLeftPress = () => onDirectionPress({ x: -1, y: 0 });
-  const handleRightPress = () => onDirectionPress({ x: 1, y: 0 });
+  // Direction handlers with explicit direction objects
+  const handleUpPress = () => {
+    console.log("UP pressed"); // Debugging
+    onDirectionPress({ x: 0, y: -1 });
+  };
+  
+  const handleDownPress = () => {
+    console.log("DOWN pressed"); // Debugging
+    onDirectionPress({ x: 0, y: 1 });
+  };
+  
+  const handleLeftPress = () => {
+    console.log("LEFT pressed"); // Debugging
+    onDirectionPress({ x: -1, y: 0 });
+  };
+  
+  const handleRightPress = () => {
+    console.log("RIGHT pressed"); // Debugging
+    onDirectionPress({ x: 1, y: 0 });
+  };
 
   return (
     <View style={styles.container}>

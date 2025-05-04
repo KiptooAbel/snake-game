@@ -1,5 +1,5 @@
-// GameBoard.tsx - Contains the main game logic and rendering
-import React, { useState, useEffect, useRef } from "react";
+// GameBoard.tsx - Fixed version with specific focus on left button
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Snake from "@/components/Snake";
@@ -58,8 +58,14 @@ const GameBoard: React.FC = () => {
   const [foodType, setFoodType] = useState<string>("REGULAR");
   const [lastScore, setLastScore] = useState<number>(0);
   
-  // Refs for game loop
+  // Refs for game loop and current direction
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+  const directionRef = useRef<Position>(INITIAL_DIRECTION);
+  
+  // Keep the ref up to date with the state
+  useEffect(() => {
+    directionRef.current = direction;
+  }, [direction]);
   
   // Initialize obstacles when the game starts
   useEffect(() => {
@@ -118,6 +124,7 @@ const GameBoard: React.FC = () => {
     setSnake(getInitialSnake());
     setDirection(INITIAL_DIRECTION);
     setNextDirection(INITIAL_DIRECTION);
+    directionRef.current = INITIAL_DIRECTION;
     setFoodType("REGULAR");
     setFood(generateFood());
     setObstacles(generateInitialObstacles());
@@ -128,6 +135,7 @@ const GameBoard: React.FC = () => {
     if (gameOver || isPaused || !gameStarted) return;
     
     const moveSnake = () => {
+      // Update current direction to next direction
       setDirection(nextDirection);
       
       let newSnake = [...snake];
@@ -191,31 +199,40 @@ const GameBoard: React.FC = () => {
     };
   }, [snake, gameOver, isPaused, gameStarted, nextDirection, score, difficulty, obstacles]);
 
-  const changeDirection = (newDir: Position) => {
-    // Safely check direction - ensure it's not null before accessing properties
-    if (!direction || !newDir) return;
+  // Handle direction changes from controls and gestures
+  const handleDirectionChange = useCallback((newDir: Position) => {
+    console.log("Direction changing to:", newDir);
+    
+    // Get the current direction from the ref, not the state
+    const currentDir = directionRef.current;
     
     // Prevent 180-degree turns
     if (
-      (direction.x === 1 && newDir.x === -1) ||
-      (direction.x === -1 && newDir.x === 1) ||
-      (direction.y === 1 && newDir.y === -1) ||
-      (direction.y === -1 && newDir.y === 1)
+      (currentDir.x === 1 && newDir.x === -1) ||
+      (currentDir.x === -1 && newDir.x === 1) ||
+      (currentDir.y === 1 && newDir.y === -1) ||
+      (currentDir.y === -1 && newDir.y === 1)
     ) {
+      console.log("Prevented 180-degree turn");
       return;
     }
     
-    setNextDirection(newDir);
-  };
-
-  // Register the direction change handler with the context
-  useEffect(() => {
-    setDirectionChangeCallback(changeDirection);
+    // Debug logs for left button issue
+    if (newDir.x === -1 && newDir.y === 0) {
+      console.log("LEFT DIRECTION CHANGE ACCEPTED!");
+      console.log("Current direction:", currentDir);
+      console.log("Setting next direction to LEFT");
+    }
     
-    return () => {
-      setDirectionChangeCallback(null);
-    };
-  }, [direction]);
+    // Set the next direction
+    setNextDirection(newDir);
+  }, []);
+
+  // Register the direction change handler on mount
+  useEffect(() => {
+    console.log("Registering direction change callback");
+    setDirectionChangeCallback(handleDirectionChange);
+  }, [handleDirectionChange]);
 
   const swipeGesture = Gesture.Pan()
     .activateAfterLongPress(0)
@@ -226,16 +243,16 @@ const GameBoard: React.FC = () => {
       const { translationX, translationY } = event;
       
       if (Math.abs(translationX) > Math.abs(translationY)) {
-        if (translationX > 0 && direction.x !== -1) {
-          changeDirection({ x: 1, y: 0 });
-        } else if (translationX < 0 && direction.x !== 1) {
-          changeDirection({ x: -1, y: 0 });
+        if (translationX > 0) {
+          handleDirectionChange({ x: 1, y: 0 });
+        } else if (translationX < 0) {
+          handleDirectionChange({ x: -1, y: 0 });
         }
       } else {
-        if (translationY > 0 && direction.y !== -1) {
-          changeDirection({ x: 0, y: 1 });
-        } else if (translationY < 0 && direction.y !== 1) {
-          changeDirection({ x: 0, y: -1 });
+        if (translationY > 0) {
+          handleDirectionChange({ x: 0, y: 1 });
+        } else if (translationY < 0) {
+          handleDirectionChange({ x: 0, y: -1 });
         }
       }
     });
