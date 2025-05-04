@@ -1,20 +1,37 @@
-// Enhanced GameOver.tsx with better UI
+// Enhanced GameOver.tsx with difficulty level display
 import React, { useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { useGame } from "@/contexts/GameContext";
 
 interface GameOverProps {
   score: number;
   highScore: number;
+  difficulty: string;
   onRestart: () => void;
 }
 
-export default function GameOver({ score, highScore, onRestart }: GameOverProps) {
+export default function GameOver({ 
+  score, 
+  highScore, 
+  difficulty, 
+  onRestart 
+}: GameOverProps) {
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
 
   // Is this a new high score?
   const isNewHighScore = score >= highScore && score > 0;
+
+  // Get color based on difficulty
+  const getDifficultyColor = () => {
+    switch(difficulty) {
+      case "EASY": return "#4CAF50"; // Green
+      case "MEDIUM": return "#FFC107"; // Amber
+      case "HARD": return "#F44336"; // Red
+      default: return "#FFC107";
+    }
+  };
 
   useEffect(() => {
     // Run entrance animations
@@ -48,6 +65,9 @@ export default function GameOver({ score, highScore, onRestart }: GameOverProps)
       <View style={styles.scoreContainer}>
         <Text style={styles.scoreText}>Your Score: {score}</Text>
         <Text style={styles.scoreText}>High Score: {highScore}</Text>
+        <Text style={[styles.difficultyText, { color: getDifficultyColor() }]}>
+          Difficulty: {difficulty}
+        </Text>
       </View>
       
       {isNewHighScore && (
@@ -67,6 +87,15 @@ export default function GameOver({ score, highScore, onRestart }: GameOverProps)
       <Text style={styles.tipText}>
         Tip: Swipe or use the control pad to change direction
       </Text>
+      
+      {/* Show difficulty achievement message */}
+      {difficulty === "HARD" && score > 10 && (
+        <View style={styles.achievementContainer}>
+          <Text style={styles.achievementText}>
+            Impressive! You scored {score} points on HARD mode!
+          </Text>
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -100,6 +129,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "white",
     marginVertical: 5,
+  },
+  difficultyText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 10,
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   newHighScoreText: {
     fontSize: 28,
@@ -137,5 +174,19 @@ const styles = StyleSheet.create({
     color: "#AAA",
     textAlign: "center",
     marginTop: 10,
+  },
+  achievementContainer: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "rgba(244, 67, 54, 0.3)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(244, 67, 54, 0.5)",
+  },
+  achievementText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
   },
 });
