@@ -1,5 +1,18 @@
 // GameContext.tsx - Context for managing game state and passing down handlers
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { ObstacleType } from '@/components/Obstacle';
+
+// Define obstacle position type
+export interface Position {
+  x: number;
+  y: number;
+}
+
+// Define obstacle type with position and type info
+export interface ObstaclePosition {
+  position: Position;
+  type: ObstacleType;
+}
 
 // Define the shape of our context
 interface GameContextType {
@@ -11,6 +24,7 @@ interface GameContextType {
   gameOver: boolean;
   gameStarted: boolean;
   showControls: boolean;
+  obstacles: ObstaclePosition[];
   
   // Game methods
   setScore: (score: number) => void;
@@ -21,11 +35,14 @@ interface GameContextType {
   endGame: () => void;
   restartGame: () => void;
   toggleControls: () => void;
-  handleDirectionChange: (direction: { x: number, y: number }) => void;
+  handleDirectionChange: (direction: Position) => void;
+  setObstacles: (obstacles: ObstaclePosition[]) => void;
+  addObstacle: (obstacle: ObstaclePosition) => void;
+  removeObstacle: (position: Position) => void;
   
   // Direction change callback
-  directionChangeCallback: ((direction: { x: number, y: number }) => void) | null;
-  setDirectionChangeCallback: (callback: ((direction: { x: number, y: number }) => void) | null) => void;
+  directionChangeCallback: ((direction: Position) => void) | null;
+  setDirectionChangeCallback: (callback: ((direction: Position) => void) | null) => void;
 }
 
 // Create the context with a default value
@@ -45,9 +62,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [obstacles, setObstacles] = useState<ObstaclePosition[]>([]);
   
   // Direction change callback - this will be set by the GameBoard component
-  const [directionChangeCallback, setDirectionChangeCallback] = useState<((direction: { x: number, y: number }) => void) | null>(null);
+  const [directionChangeCallback, setDirectionChangeCallback] = useState<((direction: Position) => void) | null>(null);
   
   // Game methods
   const togglePause = () => setIsPaused(prev => !prev);
@@ -69,12 +87,27 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setGameOver(false);
     setIsPaused(false);
     setGameStarted(true);
+    setObstacles([]); // Clear obstacles when restarting
   };
   
   const toggleControls = () => setShowControls(prev => !prev);
   
+  // Add a new obstacle
+  const addObstacle = (obstacle: ObstaclePosition) => {
+    setObstacles(prev => [...prev, obstacle]);
+  };
+  
+  // Remove an obstacle at a specific position
+  const removeObstacle = (position: Position) => {
+    setObstacles(prev => 
+      prev.filter(obstacle => 
+        obstacle.position.x !== position.x || obstacle.position.y !== position.y
+      )
+    );
+  };
+  
   // This function will be passed to the ControlPad component
-  const handleDirectionChange = (direction: { x: number, y: number }) => {
+  const handleDirectionChange = (direction: Position) => {
     if (directionChangeCallback) {
       directionChangeCallback(direction);
     }
@@ -90,6 +123,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     gameOver,
     gameStarted,
     showControls,
+    obstacles,
     
     // Methods
     setScore,
@@ -101,6 +135,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     restartGame,
     toggleControls,
     handleDirectionChange,
+    setObstacles,
+    addObstacle,
+    removeObstacle,
     
     // Direction callback
     directionChangeCallback,

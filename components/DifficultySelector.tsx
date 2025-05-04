@@ -16,15 +16,15 @@ interface DifficultySelectorProps {
 
 const difficultyInfo = {
   EASY: {
-    description: "Larger cells, slower speed",
+    description: "Larger cells, slower speed, fewer obstacles",
     color: ["#4CAF50", "#2E7D32"], // Green gradient
   },
   MEDIUM: {
-    description: "Balanced gameplay",
+    description: "Balanced gameplay, moderate obstacles",
     color: ["#FFC107", "#FF8F00"], // Amber gradient
   },
   HARD: {
-    description: "Smaller cells, faster speed",
+    description: "Smaller cells, faster speed, many obstacles",
     color: ["#F44336", "#C62828"], // Red gradient
   }
 };
@@ -91,17 +91,36 @@ export default function DifficultySelector({
               
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>EASY:</Text>
-                <Text style={styles.detailText}>15×15 grid, Slow starting speed</Text>
+                <Text style={styles.detailText}>15×15 grid, Slow speed, 3-5 obstacles</Text>
               </View>
               
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>MEDIUM:</Text>
-                <Text style={styles.detailText}>20×20 grid, Medium starting speed</Text>
+                <Text style={styles.detailText}>20×20 grid, Medium speed, 5-8 obstacles</Text>
               </View>
               
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>HARD:</Text>
-                <Text style={styles.detailText}>25×25 grid, Fast starting speed</Text>
+                <Text style={styles.detailText}>25×25 grid, Fast speed, 7-12 obstacles</Text>
+              </View>
+            </View>
+            
+            <View style={styles.obstacleInfo}>
+              <Text style={styles.detailsTitle}>OBSTACLE TYPES</Text>
+              
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>STATIC:</Text>
+                <Text style={styles.detailText}>Square obstacles that don't move</Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>PULSING:</Text>
+                <Text style={styles.detailText}>Circular obstacles that pulse in size</Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>MOVING:</Text>
+                <Text style={styles.detailText}>Diamond obstacles that move back and forth</Text>
               </View>
             </View>
             
@@ -187,6 +206,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0, 0, 0, 0.3)",
   },
   difficultyDetails: {
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 15,
+  },
+  obstacleInfo: {
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     borderRadius: 8,
     padding: 15,

@@ -4,16 +4,13 @@ import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
 import Snake from "@/components/Snake";
 import Food from "@/components/Food";
+import Obstacle from "@/components/Obstacle";
 import GameOver from "@/components/GameOver";
 import { useGameDimensions } from "@/hooks/useGameDimensions";
 import { useFoodTypes } from "@/hooks/useFoodTypes";
 import { useGameSpeed } from "@/hooks/useGameSpeed";
-import { useGame } from "@/contexts/GameContext";
-
-interface Position {
-  x: number;
-  y: number;
-}
+import { useObstacles } from "@/hooks/useObstacles";
+import { useGame, Position, ObstaclePosition } from "@/contexts/GameContext";
 
 const GameBoard: React.FC = () => {
   // Get game state and methods from context
@@ -28,7 +25,10 @@ const GameBoard: React.FC = () => {
     startGame,
     endGame,
     restartGame,
-    setDirectionChangeCallback
+    setDirectionChangeCallback,
+    obstacles,
+    setObstacles,
+    addObstacle
   } = useGame();
 
   // Get game dimensions based on difficulty
@@ -41,6 +41,14 @@ const GameBoard: React.FC = () => {
   // Get game speed based on score and difficulty
   const { getSpeed } = useGameSpeed(difficulty);
   
+  // Get obstacle utilities based on grid size and difficulty
+  const { 
+    generateInitialObstacles, 
+    generateObstacle, 
+    shouldAddObstacle, 
+    checkObstacleCollision 
+  } = useObstacles(difficulty, GRID_SIZE);
+  
   // Game state
   const INITIAL_DIRECTION: Position = { x: 1, y: 0 };
   const [snake, setSnake] = useState(getInitialSnake());
@@ -48,11 +56,28 @@ const GameBoard: React.FC = () => {
   const [nextDirection, setNextDirection] = useState<Position>(INITIAL_DIRECTION);
   const [food, setFood] = useState<Position>({ x: 10, y: 10 });
   const [foodType, setFoodType] = useState<string>("REGULAR");
+  const [lastScore, setLastScore] = useState<number>(0);
   
   // Refs for game loop
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Generate food in a position not occupied by the snake
+  // Initialize obstacles when the game starts
+  useEffect(() => {
+    if (gameStarted && obstacles.length === 0) {
+      const initialObstacles = generateInitialObstacles();
+      setObstacles(initialObstacles);
+    }
+  }, [gameStarted]);
+  
+  // Reset obstacles when difficulty changes
+  useEffect(() => {
+    if (gameStarted) {
+      const initialObstacles = generateInitialObstacles();
+      setObstacles(initialObstacles);
+    }
+  }, [difficulty]);
+  
+  // Generate food in a position not occupied by the snake or obstacles
   const generateFood = () => {
     let newFood: Position;
     do {
@@ -61,7 +86,10 @@ const GameBoard: React.FC = () => {
         y: Math.floor(Math.random() * GRID_SIZE),
       };
     } while (
-      snake.some(segment => segment.x === newFood.x && segment.y === newFood.y)
+      // Check collision with snake
+      snake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
+      // Check collision with obstacles
+      checkObstacleCollision(newFood, obstacles)
     );
     
     // Determine new food type
@@ -92,6 +120,7 @@ const GameBoard: React.FC = () => {
     setNextDirection(INITIAL_DIRECTION);
     setFoodType("REGULAR");
     setFood(generateFood());
+    setObstacles(generateInitialObstacles());
   };
 
   // Game loop
@@ -118,6 +147,12 @@ const GameBoard: React.FC = () => {
         endGame();
         return;
       }
+      
+      // Check for collision with obstacles
+      if (checkObstacleCollision(head, obstacles)) {
+        endGame();
+        return;
+      }
 
       newSnake.unshift(head);
 
@@ -129,6 +164,16 @@ const GameBoard: React.FC = () => {
         
         const newScore = score + pointsToAdd;
         setScore(newScore);
+        setLastScore(newScore);
+        
+        // Check if we should add a new obstacle based on score
+        if (shouldAddObstacle(newScore, obstacles.length)) {
+          const newObstacle = generateObstacle([
+            ...newSnake.map(segment => ({ x: segment.x, y: segment.y })),
+            food
+          ]);
+          addObstacle(newObstacle);
+        }
         
         setFood(generateFood());
       } else {
@@ -144,7 +189,7 @@ const GameBoard: React.FC = () => {
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     };
-  }, [snake, gameOver, isPaused, gameStarted, nextDirection, score, difficulty]);
+  }, [snake, gameOver, isPaused, gameStarted, nextDirection, score, difficulty, obstacles]);
 
   const changeDirection = (newDir: Position) => {
     // Safely check direction - ensure it's not null before accessing properties
@@ -226,6 +271,16 @@ const GameBoard: React.FC = () => {
               </TouchableOpacity>
             ) : (
               <>
+                {/* Render all obstacles */}
+                {obstacles.map((obstacle, index) => (
+                  <Obstacle
+                    key={`obstacle-${index}`}
+                    position={obstacle.position}
+                    cellSize={CELL_SIZE}
+                    type={obstacle.type}
+                  />
+                ))}
+                
                 <Snake snake={snake} cellSize={CELL_SIZE} />
                 <Food 
                   position={food} 
