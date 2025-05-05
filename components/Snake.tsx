@@ -1,7 +1,8 @@
-// Enhanced Snake.tsx with improved styling
+// Modified Snake.tsx with ghost mode effects
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useGame } from "@/contexts/GameContext";
 
 // Define types for the snake's segments
 type Position = {
@@ -15,19 +16,38 @@ interface SnakeProps {
 }
 
 export default function Snake({ snake, cellSize }: SnakeProps) {
+  // Get power-up states from context
+  const { isPowerUpActive } = useGame();
+  
+  // Check if ghost mode is active
+  const isGhostMode = isPowerUpActive('GHOST_MODE');
+  // Check if invincibility is active
+  const isInvincible = isPowerUpActive('INVINCIBILITY');
+  
   return (
     <>
       {snake.map((segment: Position, index: number) => {
         // Determine if this segment is the head
         const isHead = index === 0;
         
-        // Different colors for head and body
-        const colors = isHead 
+        // Different colors based on power-ups and segment type
+        let colors = isHead 
           ? ["#00ff00", "#00cc00"] 
           : ["#00dd00", "#00aa00"];
+          
+        // Modify colors for ghost mode
+        if (isGhostMode) {
+          colors = isHead 
+            ? ["rgba(0, 255, 0, 0.5)", "rgba(0, 204, 0, 0.5)"] 
+            : ["rgba(0, 221, 0, 0.5)", "rgba(0, 170, 0, 0.5)"];
+        }
         
-        // Calculate border radius based on neighboring segments
-        let borderRadius = cellSize / 3;
+        // Modify colors for invincibility
+        if (isInvincible) {
+          colors = isHead 
+            ? ["#FFC107", "#FF8F00"] 
+            : ["#FFCA28", "#FFA000"];
+        }
         
         // Make the snake segments rounded
         return (
@@ -41,7 +61,7 @@ export default function Snake({ snake, cellSize }: SnakeProps) {
                 top: segment.y * cellSize,
                 width: cellSize,
                 height: cellSize,
-                borderRadius: borderRadius,
+                borderRadius: cellSize / 3,
               },
             ]}
           >
@@ -72,6 +92,20 @@ export default function Snake({ snake, cellSize }: SnakeProps) {
                 />
               </>
             )}
+            
+            {/* Add special effects for power-ups */}
+            {isHead && isInvincible && (
+              <View
+                style={[
+                  styles.shield,
+                  {
+                    width: cellSize * 1.4,
+                    height: cellSize * 1.4,
+                    borderRadius: cellSize * 0.7,
+                  },
+                ]}
+              />
+            )}
           </LinearGradient>
         );
       })}
@@ -94,5 +128,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     backgroundColor: "black",
     borderRadius: 50,
+  },
+  shield: {
+    position: "absolute",
+    borderWidth: 2,
+    borderColor: "rgba(255, 193, 7, 0.7)",
+    backgroundColor: "rgba(255, 193, 7, 0.2)",
   },
 });

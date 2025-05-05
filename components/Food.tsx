@@ -1,4 +1,4 @@
-// Enhanced Food.tsx with difficulty-specific food types
+// Modified Food.tsx
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,8 +9,9 @@ type Position = {
   y: number;
 };
 
-// Define food types
-type FoodType = 'REGULAR' | 'GOLDEN' | 'SPEED';
+// Define all food types
+type FoodType = 'REGULAR' | 'GOLDEN' | 'SPEED_BOOST' | 'SPEED_SLOW' | 
+                'DOUBLE_POINTS' | 'INVINCIBILITY' | 'GHOST_MODE';
 
 // Add TypeScript annotations
 interface FoodProps {
@@ -41,17 +42,52 @@ export default function Food({
           pulseDuration: 400,
           pulseScale: 1.3,
           rotationDuration: 1800,
-          points: 3,
+          symbol: "★",
         };
-      case 'SPEED':
+      case 'SPEED_BOOST':
         return {
           color: "#2196F3", // Blue
           secondaryColor: "#0D47A1", // Darker blue
           pulseDuration: 300,
           pulseScale: 1.25,
+          rotationDuration: 1200,
+          symbol: "⚡",
+        };
+      case 'SPEED_SLOW':
+        return {
+          color: "#9C27B0", // Purple
+          secondaryColor: "#4A148C", // Darker purple
+          pulseDuration: 600,
+          pulseScale: 1.2,
+          rotationDuration: 2500,
+          symbol: "🐢",
+        };
+      case 'DOUBLE_POINTS':
+        return {
+          color: "#4CAF50", // Green
+          secondaryColor: "#2E7D32", // Darker green
+          pulseDuration: 400,
+          pulseScale: 1.3,
+          rotationDuration: 2000,
+          symbol: "×2",
+        };
+      case 'INVINCIBILITY':
+        return {
+          color: "#FFC107", // Amber
+          secondaryColor: "#FF8F00", // Darker amber
+          pulseDuration: 350,
+          pulseScale: 1.4,
           rotationDuration: 1500,
-          points: 1,
-          effect: "speed",
+          symbol: "🛡️",
+        };
+      case 'GHOST_MODE':
+        return {
+          color: "#E0E0E0", // Light gray
+          secondaryColor: "#9E9E9E", // Darker gray
+          pulseDuration: 450,
+          pulseScale: 1.35,
+          rotationDuration: 2200,
+          symbol: "👻",
         };
       default: // REGULAR
         return {
@@ -60,21 +96,12 @@ export default function Food({
           pulseDuration: 500,
           pulseScale: 1.2,
           rotationDuration: 2000,
-          points: 1,
+          symbol: "",
         };
     }
   };
   
   const foodProps = getFoodProperties();
-
-  // Determine if special foods should appear based on difficulty
-  const shouldShowSpecialFood = () => {
-    // Higher chances for special food in easier modes
-    if (difficulty === 'EASY') return Math.random() < 0.3;
-    if (difficulty === 'MEDIUM') return Math.random() < 0.2;
-    if (difficulty === 'HARD') return Math.random() < 0.1;
-    return false;
-  };
 
   useEffect(() => {
     // Create pulsing animation
@@ -102,7 +129,7 @@ export default function Food({
       })
     ).start();
 
-    // Add bounce animation for special food
+    // Add bounce animation for power-up food types
     if (foodType !== 'REGULAR') {
       Animated.loop(
         Animated.sequence([
@@ -136,7 +163,7 @@ export default function Food({
 
   // Render special effects for different food types
   const renderFoodEffects = () => {
-    if (foodType === 'GOLDEN') {
+    if (foodType !== 'REGULAR') {
       return (
         <Animated.View
           style={[
@@ -148,31 +175,10 @@ export default function Food({
                 inputRange: [1, foodProps.pulseScale],
                 outputRange: [0.3, 0.6],
               }),
+              backgroundColor: `${foodProps.color}40`, // Add transparency
             },
           ]}
         />
-      );
-    }
-    
-    if (foodType === 'SPEED') {
-      return (
-        <View style={styles.speedEffectContainer}>
-          {[...Array(4)].map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.speedLine,
-                {
-                  transform: [{ rotate: `${i * 90}deg` }],
-                  width: cellSize * 0.8,
-                  height: 2,
-                  top: cellSize / 2,
-                  left: (cellSize - cellSize * 0.8) / 2,
-                },
-              ]}
-            />
-          ))}
-        </View>
       );
     }
     
@@ -200,27 +206,28 @@ export default function Food({
       {renderFoodEffects()}
       
       {/* Main food shape */}
-      {foodType === 'REGULAR' ? (
-        <View 
-          style={[
-            styles.food, 
-            { 
-              width: cellSize * 0.8, 
-              height: cellSize * 0.8,
-              backgroundColor: foodProps.color,
-            }
-          ]} 
-        />
-      ) : (
-        <LinearGradient
-          colors={[foodProps.color, foodProps.secondaryColor]}
-          style={[
-            styles.food,
-            { width: cellSize * 0.8, height: cellSize * 0.8 },
-          ]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
+      <LinearGradient
+        colors={[foodProps.color, foodProps.secondaryColor]}
+        style={[
+          styles.food,
+          { width: cellSize * 0.8, height: cellSize * 0.8 },
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      
+      {/* Power-up symbol */}
+      {foodType !== 'REGULAR' && (
+        <View style={styles.symbolContainer}>
+          <Animated.Text 
+            style={[
+              styles.symbol,
+              { fontSize: cellSize * 0.4 }
+            ]}
+          >
+            {foodProps.symbol}
+          </Animated.Text>
+        </View>
       )}
       
       {/* Apple stem and leaf only for regular food */}
@@ -275,17 +282,17 @@ const styles = StyleSheet.create({
   glow: {
     position: "absolute",
     borderRadius: 100,
-    backgroundColor: "rgba(255, 215, 0, 0.3)",
   },
-  speedEffectContainer: {
+  symbolContainer: {
     position: "absolute",
-    width: "100%",
-    height: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
-  speedLine: {
-    position: "absolute",
-    backgroundColor: "rgba(33, 150, 243, 0.8)",
+  symbol: {
+    color: "white",
+    fontWeight: "bold",
+    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
   },
 });

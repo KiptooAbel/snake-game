@@ -1,7 +1,8 @@
-// Header.tsx - Displays score information and difficulty selector
+// Modified Header.tsx
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useGame } from "@/contexts/GameContext";
+import PowerUpsDisplay from "@/components/PowerUpsDisplay";
 
 interface HeaderProps {
   onDifficultyPress: () => void;
@@ -22,26 +23,33 @@ const Header: React.FC<HeaderProps> = ({ onDifficultyPress }) => {
   };
   
   return (
-    <View style={styles.header}>
-      <View style={styles.scoreContainer}>
-        <Text style={styles.scoreText}>Score: {score}</Text>
-        <Text style={styles.scoreText}>High Score: {highScore}</Text>
+    <View style={styles.headerContainer}>
+      <View style={styles.header}>
+        <View style={styles.scoreContainer}>
+          <Text style={styles.scoreText}>Score: {score}</Text>
+          <Text style={styles.scoreText}>High Score: {highScore}</Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={[
+            styles.difficultyButton,
+            { borderColor: getDifficultyColor() }
+          ]}
+          onPress={onDifficultyPress}
+        >
+          <Text style={[
+            styles.difficultyButtonText,
+            { color: getDifficultyColor() }
+          ]}>
+            {difficulty}
+          </Text>
+        </TouchableOpacity>
       </View>
       
-      <TouchableOpacity 
-        style={[
-          styles.difficultyButton,
-          { borderColor: getDifficultyColor() }
-        ]}
-        onPress={onDifficultyPress}
-      >
-        <Text style={[
-          styles.difficultyButtonText,
-          { color: getDifficultyColor() }
-        ]}>
-          {difficulty}
-        </Text>
-      </TouchableOpacity>
+      {/* Add power-ups display below the header */}
+      <View style={styles.powerUpsContainer}>
+        <PowerUpsDisplay />
+      </View>
     </View>
   );
 };
@@ -49,13 +57,16 @@ const Header: React.FC<HeaderProps> = ({ onDifficultyPress }) => {
 export default Header;
 
 const styles = StyleSheet.create({
+  headerContainer: {
+    width: "100%",
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   scoreContainer: {
     flex: 1,
@@ -74,5 +85,11 @@ const styles = StyleSheet.create({
   },
   difficultyButtonText: {
     fontWeight: "bold",
+  },
+  powerUpsContainer: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 10,
   },
 });

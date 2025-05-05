@@ -1,6 +1,7 @@
-// GameContext.tsx - Context for managing game state and passing down handlers
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+// Modified GameContext.tsx
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { ObstacleType } from '@/components/Obstacle';
+import { usePowerUps, PowerUpType } from '@/hooks/usePowerUps';
 
 // Define obstacle position type
 export interface Position {
@@ -40,6 +41,12 @@ interface GameContextType {
   addObstacle: (obstacle: ObstaclePosition) => void;
   removeObstacle: (position: Position) => void;
   
+  // Power-up methods
+  isPowerUpActive: (type: PowerUpType) => boolean;
+  activatePowerUp: (type: PowerUpType, duration: number, speedFactor?: number) => void;
+  getPowerUpSpeedFactor: () => number;
+  getActivePowerUps: () => { type: PowerUpType, remainingTime: number }[];
+  
   // Direction change callback
   setDirectionChangeCallback: (callback: (direction: Position) => void) => void;
 }
@@ -62,6 +69,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [obstacles, setObstacles] = useState<ObstaclePosition[]>([]);
+  
+  // Get power-ups methods
+  const { 
+    isPowerUpActive, 
+    addPowerUp: activatePowerUp, 
+    getSpeedFactor: getPowerUpSpeedFactor,
+    getActivePowerUps 
+  } = usePowerUps();
   
   // Reference to the direction change callback to ensure it persists
   const directionChangeCallbackRef = useRef<((direction: Position) => void) | null>(null);
@@ -155,6 +170,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setObstacles,
     addObstacle,
     removeObstacle,
+    
+    // Power-up methods
+    isPowerUpActive,
+    activatePowerUp,
+    getPowerUpSpeedFactor,
+    getActivePowerUps,
     
     // Direction callback setter
     setDirectionChangeCallback

@@ -1,4 +1,4 @@
-// GameBoard.tsx - Fixed version with specific focus on left button
+// Modified GameBoard.tsx with power-up integration and styles
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
@@ -6,6 +6,7 @@ import Snake from "@/components/Snake";
 import Food from "@/components/Food";
 import Obstacle from "@/components/Obstacle";
 import GameOver from "@/components/GameOver";
+import PowerUpsDisplay from "@/components/PowerUpsDisplay";
 import { useGameDimensions } from "@/hooks/useGameDimensions";
 import { useFoodTypes } from "@/hooks/useFoodTypes";
 import { useGameSpeed } from "@/hooks/useGameSpeed";
@@ -28,7 +29,11 @@ const GameBoard: React.FC = () => {
     setDirectionChangeCallback,
     obstacles,
     setObstacles,
-    addObstacle
+    addObstacle,
+    // Power-up related methods
+    isPowerUpActive,
+    activatePowerUp,
+    getPowerUpSpeedFactor
   } = useGame();
 
   // Get game dimensions based on difficulty
@@ -36,7 +41,7 @@ const GameBoard: React.FC = () => {
   const { GRID_SIZE, CELL_SIZE, BOARD_WIDTH, BOARD_HEIGHT } = gameDimensions;
   
   // Get food types and their probabilities
-  const { generateFoodType } = useFoodTypes(difficulty);
+  const { generateFoodType, getFoodProperties } = useFoodTypes(difficulty);
   
   // Get game speed based on score and difficulty
   const { getSpeed } = useGameSpeed(difficulty);
@@ -150,25 +155,46 @@ const GameBoard: React.FC = () => {
       if (head.y < 0) head.y = GRID_SIZE - 1;
       if (head.y >= GRID_SIZE) head.y = 0;
 
-      // Check for collision with self
+      // Check for collision with self - add check for invincibility and ghost mode
       if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
-        endGame();
-        return;
+        if (!isPowerUpActive('INVINCIBILITY') && !isPowerUpActive('GHOST_MODE')) {
+          endGame();
+          return;
+        }
       }
       
-      // Check for collision with obstacles
+      // Check for collision with obstacles - add check for invincibility
       if (checkObstacleCollision(head, obstacles)) {
-        endGame();
-        return;
+        if (!isPowerUpActive('INVINCIBILITY')) {
+          endGame();
+          return;
+        }
       }
 
       newSnake.unshift(head);
 
       // Check for food collision
       if (head.x === food.x && head.y === food.y) {
+        // Get food properties
+        const foodProps = getFoodProperties(foodType);
+        
+        // Handle power-up effects
+        if (foodProps.powerUpEffect) {
+          // Activate the power-up
+          activatePowerUp(
+            foodProps.powerUpEffect,
+            foodProps.duration,
+            foodProps.speedFactor
+          );
+        }
+        
         // Calculate points to add based on food type
-        let pointsToAdd = 1;
-        if (foodType === "GOLDEN") pointsToAdd = 3;
+        let pointsToAdd = foodProps.points;
+        
+        // Double points if the power-up is active
+        if (isPowerUpActive('DOUBLE_POINTS')) {
+          pointsToAdd *= 2;
+        }
         
         const newScore = score + pointsToAdd;
         setScore(newScore);
@@ -184,6 +210,7 @@ const GameBoard: React.FC = () => {
         }
         
         setFood(generateFood());
+        setFoodType(generateFoodType());
       } else {
         newSnake.pop();
       }
@@ -191,13 +218,25 @@ const GameBoard: React.FC = () => {
       setSnake(newSnake);
     };
 
-    // Set up dynamic game speed based on score and difficulty
-    gameLoopRef.current = setInterval(moveSnake, getSpeed(score));
+    // Modify speed calculation to consider power-ups
+    const speed = getSpeed(score) * getPowerUpSpeedFactor();
+    gameLoopRef.current = setInterval(moveSnake, speed);
     
     return () => {
       if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     };
-  }, [snake, gameOver, isPaused, gameStarted, nextDirection, score, difficulty, obstacles]);
+  }, [
+    snake, 
+    gameOver, 
+    isPaused, 
+    gameStarted, 
+    nextDirection, 
+    score, 
+    difficulty, 
+    obstacles, 
+    isPowerUpActive, 
+    getPowerUpSpeedFactor
+  ]);
 
   // Handle direction changes from controls and gestures
   const handleDirectionChange = useCallback((newDir: Position) => {
@@ -268,6 +307,9 @@ const GameBoard: React.FC = () => {
           }
         ]}
       >
+        {/* Add PowerUpsDisplay here */}
+        <PowerUpsDisplay />
+        
         {gameOver ? (
           <GameOver 
             score={score} 
@@ -302,7 +344,7 @@ const GameBoard: React.FC = () => {
                 <Food 
                   position={food} 
                   cellSize={CELL_SIZE} 
-                  foodType={foodType as 'REGULAR' | 'GOLDEN' | 'SPEED'} 
+                  foodType={foodType as any} 
                   difficulty={difficulty} 
                 />
                 
@@ -326,8 +368,7 @@ const GameBoard: React.FC = () => {
   );
 };
 
-export default GameBoard;
-
+// Add the styles definition that was missing
 const styles = StyleSheet.create({
   gameBoard: {
     backgroundColor: "#222",
@@ -389,4 +430,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#AAA",
   },
+  powerUpIndicator: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    padding: 8,
+    borderRadius: 5,
+    zIndex: 10,
+  },
+  powerUpText: {
+    color: "white",
+    fontWeight: "bold",
+  }
 });
+
+export default GameBoard;
