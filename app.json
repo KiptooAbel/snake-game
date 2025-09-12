@@ -15,7 +15,9 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.abelkiprop.snakegame",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +38,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1db55e28-9418-4d92-a355-8fb2767344a0"
+      }
     }
   }
 }
