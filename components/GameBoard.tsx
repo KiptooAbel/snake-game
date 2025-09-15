@@ -64,7 +64,7 @@ const GameBoard: React.FC = () => {
   const [lastScore, setLastScore] = useState<number>(0);
   
   // Refs for game loop and current direction
-  const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+  const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const directionRef = useRef<Position>(INITIAL_DIRECTION);
   
   // Keep the ref up to date with the state
@@ -72,13 +72,27 @@ const GameBoard: React.FC = () => {
     directionRef.current = direction;
   }, [direction]);
   
-  // Initialize obstacles when the game starts
+  // Effect to handle game restarts
   useEffect(() => {
-    if (gameStarted && obstacles.length === 0) {
+    if (gameStarted && gameOver) {
+      // Game was restarted after game over
+      resetGame();
+    } else if (gameStarted && !gameOver) {
+      // Normal game start
+      if (snake.length === getInitialSnake().length) {
+        // This is a fresh start, reset everything
+        resetGame();
+      }
+    }
+  }, [gameStarted, gameOver]);
+  
+  // Initialize obstacles when the game starts for the first time
+  useEffect(() => {
+    if (gameStarted && obstacles.length === 0 && !gameOver) {
       const initialObstacles = generateInitialObstacles();
       setObstacles(initialObstacles);
     }
-  }, [gameStarted]);
+  }, [gameStarted, obstacles.length, gameOver]);
   
   // Reset obstacles when difficulty changes
   useEffect(() => {
@@ -90,29 +104,13 @@ const GameBoard: React.FC = () => {
   
   // Generate food in a position not occupied by the snake or obstacles
   const generateFood = () => {
-    let newFood: Position;
-    do {
-      newFood = {
-        x: Math.floor(Math.random() * GRID_SIZE),
-        y: Math.floor(Math.random() * GRID_SIZE),
-      };
-    } while (
-      // Check collision with snake
-      snake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
-      // Check collision with obstacles
-      checkObstacleCollision(newFood, obstacles)
-    );
-    
-    // Determine new food type
-    const newFoodType = generateFoodType();
-    setFoodType(newFoodType);
-    
-    return newFood;
+    return generateFoodForSnake(snake);
   };
 
   // Set up initial food position
   useEffect(() => {
-    setFood(generateFood());
+    const initialSnake = getInitialSnake();
+    setFood(generateFoodForSnake(initialSnake));
   }, [gameDimensions]);
 
   // Update snake position when difficulty changes
@@ -124,15 +122,46 @@ const GameBoard: React.FC = () => {
     }
   }, [gameDimensions]);
 
-  // Reset game
+  // Reset game - completely reset all game state
   const resetGame = () => {
-    setSnake(getInitialSnake());
+    const initialSnake = getInitialSnake();
+    setSnake(initialSnake);
     setDirection(INITIAL_DIRECTION);
     setNextDirection(INITIAL_DIRECTION);
     directionRef.current = INITIAL_DIRECTION;
     setFoodType("REGULAR");
-    setFood(generateFood());
-    setObstacles(generateInitialObstacles());
+    
+    // Generate new food position
+    const newFood = generateFoodForSnake(initialSnake);
+    setFood(newFood);
+    
+    // Generate new obstacles
+    const initialObstacles = generateInitialObstacles();
+    setObstacles(initialObstacles);
+  };
+  
+  // Generate food that doesn't conflict with snake or obstacles
+  const generateFoodForSnake = (currentSnake: Position[]) => {
+    let newFood: Position;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    do {
+      newFood = {
+        x: Math.floor(Math.random() * GRID_SIZE),
+        y: Math.floor(Math.random() * GRID_SIZE),
+      };
+      attempts++;
+    } while (
+      attempts < maxAttempts && (
+        // Check collision with snake
+        currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
+        // Check collision with obstacles
+        checkObstacleCollision(newFood, obstacles)
+      )
+    );
+    
+    return newFood;
   };
 
   // Game loop
@@ -209,7 +238,8 @@ const GameBoard: React.FC = () => {
           addObstacle(newObstacle);
         }
         
-        setFood(generateFood());
+        const newFood = generateFoodForSnake(newSnake);
+        setFood(newFood);
         setFoodType(generateFoodType());
       } else {
         newSnake.pop();
@@ -274,25 +304,35 @@ const GameBoard: React.FC = () => {
   }, [handleDirectionChange]);
 
   const swipeGesture = Gesture.Pan()
-    .activateAfterLongPress(0)
+    .minDistance(50)
     .shouldCancelWhenOutside(false)
     .onEnd((event) => {
       if (gameOver || isPaused || !gameStarted) return;
       
-      const { translationX, translationY } = event;
-      
-      if (Math.abs(translationX) > Math.abs(translationY)) {
-        if (translationX > 0) {
-          handleDirectionChange({ x: 1, y: 0 });
-        } else if (translationX < 0) {
-          handleDirectionChange({ x: -1, y: 0 });
+      try {
+        const { translationX, translationY } = event;
+        
+        // Require minimum swipe distance to prevent accidental triggers
+        const minSwipeDistance = 30;
+        if (Math.abs(translationX) < minSwipeDistance && Math.abs(translationY) < minSwipeDistance) {
+          return;
         }
-      } else {
-        if (translationY > 0) {
-          handleDirectionChange({ x: 0, y: 1 });
-        } else if (translationY < 0) {
-          handleDirectionChange({ x: 0, y: -1 });
+        
+        if (Math.abs(translationX) > Math.abs(translationY)) {
+          if (translationX > 0) {
+            handleDirectionChange({ x: 1, y: 0 });
+          } else if (translationX < 0) {
+            handleDirectionChange({ x: -1, y: 0 });
+          }
+        } else {
+          if (translationY > 0) {
+            handleDirectionChange({ x: 0, y: 1 });
+          } else if (translationY < 0) {
+            handleDirectionChange({ x: 0, y: -1 });
+          }
         }
+      } catch (error) {
+        console.error('Swipe gesture error:', error);
       }
     });
 

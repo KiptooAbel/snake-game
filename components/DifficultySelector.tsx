@@ -5,7 +5,8 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  ScrollView
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useGame } from "@/contexts/GameContext";
@@ -42,7 +43,7 @@ export default function DifficultySelector({
   };
   
   // Render a difficulty option button
-  const renderDifficultyOption = (difficultyOption: string) => {
+  const renderDifficultyOption = (difficultyOption: keyof typeof difficultyInfo) => {
     const isSelected = difficultyOption === difficulty;
     const { color, description } = difficultyInfo[difficultyOption];
     
@@ -57,7 +58,7 @@ export default function DifficultySelector({
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={color}
+          colors={color as [string, string]}
           style={styles.gradientBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -80,49 +81,55 @@ export default function DifficultySelector({
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>SELECT DIFFICULTY</Text>
             
-            <View style={styles.optionsContainer}>
-              {renderDifficultyOption("EASY")}
-              {renderDifficultyOption("MEDIUM")}
-              {renderDifficultyOption("HARD")}
-            </View>
-            
-            <View style={styles.difficultyDetails}>
-              <Text style={styles.detailsTitle}>DIFFICULTY DETAILS</Text>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>EASY:</Text>
-                <Text style={styles.detailText}>15×15 grid, Slow speed, 3-5 obstacles</Text>
+            <ScrollView 
+              style={styles.scrollContainer}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <View style={styles.optionsContainer}>
+                {renderDifficultyOption("EASY")}
+                {renderDifficultyOption("MEDIUM")}
+                {renderDifficultyOption("HARD")}
               </View>
               
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>MEDIUM:</Text>
-                <Text style={styles.detailText}>20×20 grid, Medium speed, 5-8 obstacles</Text>
+              <View style={styles.difficultyDetails}>
+                <Text style={styles.detailsTitle}>DIFFICULTY DETAILS</Text>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>EASY:</Text>
+                  <Text style={styles.detailText}>15×15 grid, Slow speed, 3-5 obstacles</Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>MEDIUM:</Text>
+                  <Text style={styles.detailText}>20×20 grid, Medium speed, 5-8 obstacles</Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>HARD:</Text>
+                  <Text style={styles.detailText}>25×25 grid, Fast speed, 7-12 obstacles</Text>
+                </View>
               </View>
               
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>HARD:</Text>
-                <Text style={styles.detailText}>25×25 grid, Fast speed, 7-12 obstacles</Text>
+              <View style={styles.obstacleInfo}>
+                <Text style={styles.detailsTitle}>OBSTACLE TYPES</Text>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>STATIC:</Text>
+                  <Text style={styles.detailText}>Square obstacles that don't move</Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>PULSING:</Text>
+                  <Text style={styles.detailText}>Circular obstacles that pulse in size</Text>
+                </View>
+                
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>MOVING:</Text>
+                  <Text style={styles.detailText}>Diamond obstacles that move back and forth</Text>
+                </View>
               </View>
-            </View>
-            
-            <View style={styles.obstacleInfo}>
-              <Text style={styles.detailsTitle}>OBSTACLE TYPES</Text>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>STATIC:</Text>
-                <Text style={styles.detailText}>Square obstacles that don't move</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>PULSING:</Text>
-                <Text style={styles.detailText}>Circular obstacles that pulse in size</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>MOVING:</Text>
-                <Text style={styles.detailText}>Diamond obstacles that move back and forth</Text>
-              </View>
-            </View>
+            </ScrollView>
             
             <TouchableOpacity
               style={styles.closeButton}
@@ -145,7 +152,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    width: "85%",
+    width: "90%",
+    maxHeight: "80%",
     backgroundColor: "#222",
     borderRadius: 10,
     padding: 20,
@@ -156,6 +164,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 3,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 10,
   },
   modalTitle: {
     fontSize: 24,

@@ -113,7 +113,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setGameOver(false);
     setIsPaused(false);
     setGameStarted(true);
-    setObstacles([]); // Clear obstacles when restarting
+    // Don't clear obstacles here - let GameBoard handle it
   }, []);
   
   const toggleControls = useCallback(() => {

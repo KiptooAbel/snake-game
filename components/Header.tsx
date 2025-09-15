@@ -10,7 +10,10 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onDifficultyPress }) => {
   // Get game state from context
-  const { score, highScore, difficulty } = useGame();
+  const { score, highScore, difficulty, gameStarted, gameOver } = useGame();
+  
+  // Determine if difficulty can be changed (only when game is not active)
+  const canChangeDifficulty = !gameStarted || gameOver;
   
   // Get difficulty button color
   const getDifficultyColor = () => {
@@ -33,9 +36,13 @@ const Header: React.FC<HeaderProps> = ({ onDifficultyPress }) => {
         <TouchableOpacity 
           style={[
             styles.difficultyButton,
-            { borderColor: getDifficultyColor() }
+            { 
+              borderColor: getDifficultyColor(),
+              opacity: canChangeDifficulty ? 1 : 0.5 
+            }
           ]}
-          onPress={onDifficultyPress}
+          onPress={canChangeDifficulty ? onDifficultyPress : undefined}
+          disabled={!canChangeDifficulty}
         >
           <Text style={[
             styles.difficultyButtonText,

@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { GameProvider } from "@/contexts/GameContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
@@ -13,31 +14,33 @@ const GameScreen: React.FC = () => {
   const [showDifficultyModal, setShowDifficultyModal] = useState(false);
 
   return (
-    <GameProvider>
-      <View style={styles.container}>
-        <StatusBar style="light" />
-        
-        <Header 
-          onDifficultyPress={() => setShowDifficultyModal(true)}
-        />
-        
-        <GameBoard />
-        
-        <ControlsContainer />
-
-        {/* Difficulty Selection Modal */}
-        <Modal
-          visible={showDifficultyModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setShowDifficultyModal(false)}
-        >
-          <DifficultySelector
-            onClose={() => setShowDifficultyModal(false)}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GameProvider>
+        <View style={styles.container}>
+          <StatusBar style="light" />
+          
+          <Header 
+            onDifficultyPress={() => setShowDifficultyModal(true)}
           />
-        </Modal>
-      </View>
-    </GameProvider>
+          
+          <GameBoard />
+          
+          <ControlsContainer />
+
+          {/* Difficulty Selection Modal */}
+          <Modal
+            visible={showDifficultyModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowDifficultyModal(false)}
+          >
+            <DifficultySelector
+              onClose={() => setShowDifficultyModal(false)}
+            />
+          </Modal>
+        </View>
+      </GameProvider>
+    </GestureHandlerRootView>
   );
 };
 
