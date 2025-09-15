@@ -85,6 +85,8 @@ export default function DifficultySelector({
               style={styles.scrollContainer}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
             >
               <View style={styles.optionsContainer}>
                 {renderDifficultyOption("EASY")}
@@ -150,10 +152,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   modalContent: {
-    width: "90%",
-    maxHeight: "80%",
+    width: "100%",
+    maxHeight: "100%",
     backgroundColor: "#222",
     borderRadius: 10,
     padding: 20,
@@ -166,10 +170,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   scrollContainer: {
-    flex: 1,
+    maxHeight: 400,
+    minHeight: 200,
   },
   scrollContent: {
     paddingBottom: 10,
+    flexGrow: 1,
   },
   modalTitle: {
     fontSize: 24,
@@ -180,6 +186,7 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     marginBottom: 20,
+    minHeight: 150,
   },
   difficultyOption: {
     marginBottom: 10,
@@ -187,6 +194,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 2,
     borderColor: "transparent",
+    minHeight: 60,
   },
   selectedOption: {
     borderColor: "white",
