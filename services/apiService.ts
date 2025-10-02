@@ -1,6 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'https://your-api-domain.com/api'; // Replace with your actual API URL
+// API Configuration - Choose the appropriate URL for your setup
+const API_BASE_URL = __DEV__ 
+  ? 'http://10.0.2.2:8000/api'  // Android emulator
+  // ? 'http://localhost:8000/api'  // iOS simulator with artisan serve
+  // ? 'http://192.168.1.100:8000/api'  // Replace with your actual IP for physical device
+  // ? 'http://localhost/snake-api/public/api'  // XAMPP setup
+  : 'https://your-production-domain.com/api'; // Production URL
 
 export interface User {
   id: number;
