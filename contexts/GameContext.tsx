@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { ObstacleType } from '@/components/Obstacle';
 import { usePowerUps, PowerUpType } from '@/hooks/usePowerUps';
+import { useAuth } from '@/contexts/AuthContext';
+import apiService from '@/services/apiService';
 
 // Define obstacle position type
 export interface Position {
@@ -26,6 +28,7 @@ interface GameContextType {
   gameStarted: boolean;
   showControls: boolean;
   obstacles: ObstaclePosition[];
+  gameStartTime: number | null;
   
   // Game methods
   setScore: (score: number) => void;
@@ -40,6 +43,7 @@ interface GameContextType {
   setObstacles: (obstacles: ObstaclePosition[]) => void;
   addObstacle: (obstacle: ObstaclePosition) => void;
   removeObstacle: (position: Position) => void;
+  submitScore: () => Promise<void>;
   
   // Power-up methods
   isPowerUpActive: (type: PowerUpType) => boolean;
@@ -69,6 +73,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [obstacles, setObstacles] = useState<ObstaclePosition[]>([]);
+  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+  
+  // Get auth context
+  const { isAuthenticated } = useAuth();
   
   // Get power-ups methods
   const { 
@@ -96,7 +104,34 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setGameStarted(true);
     setGameOver(false);
     setIsPaused(false);
+    setGameStartTime(Date.now());
   }, []);
+  
+  const submitScore = useCallback(async () => {
+    if (!isAuthenticated || score === 0 || !gameStartTime) {
+      return;
+    }
+
+    try {
+      const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
+      const level = Math.floor(score / 100) + 1; // Simple level calculation
+      
+      await apiService.submitScore({
+        score,
+        level,
+        game_duration: gameDuration,
+        difficulty: difficulty.toLowerCase(),
+        game_stats: {
+          obstacles_count: obstacles.length,
+          power_ups_used: getActivePowerUps().length,
+        },
+      });
+      
+      console.log('Score submitted successfully');
+    } catch (error) {
+      console.error('Failed to submit score:', error);
+    }
+  }, [isAuthenticated, score, gameStartTime, difficulty, obstacles.length, getActivePowerUps]);
   
   const endGame = useCallback(() => {
     setGameOver(true);
@@ -106,13 +141,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       }
       return current;
     });
-  }, [highScore]);
+    // Submit score after game ends if user is authenticated
+    submitScore();
+  }, [highScore, submitScore]);
   
   const restartGame = useCallback(() => {
     setScore(0);
     setGameOver(false);
     setIsPaused(false);
     setGameStarted(true);
+    setGameStartTime(Date.now());
     // Don't clear obstacles here - let GameBoard handle it
   }, []);
   
@@ -156,6 +194,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     gameStarted,
     showControls,
     obstacles,
+    gameStartTime,
     
     // Methods
     setScore,
@@ -170,6 +209,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setObstacles,
     addObstacle,
     removeObstacle,
+    submitScore,
     
     // Power-up methods
     isPowerUpActive,

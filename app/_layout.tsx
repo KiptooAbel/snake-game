@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -28,14 +29,16 @@ export default function RootLayout() {
   }
 
   return (  
-    <GestureHandlerRootView style={{ flex: 1 }}> 
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="game" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>    
-    </GestureHandlerRootView>
+    <AuthProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}> 
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="game" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>    
+      </GestureHandlerRootView>
+    </AuthProvider>
   );
 }
