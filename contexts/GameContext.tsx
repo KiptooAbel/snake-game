@@ -108,7 +108,23 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   }, []);
   
   const submitScore = useCallback(async () => {
-    if (!isAuthenticated || score === 0 || !gameStartTime) {
+    console.log('🎯 submitScore called');
+    console.log('   - isAuthenticated:', isAuthenticated);
+    console.log('   - score:', score);
+    console.log('   - gameStartTime:', gameStartTime);
+    
+    if (!isAuthenticated) {
+      console.log('❌ User not authenticated, skipping score submission');
+      return;
+    }
+    
+    if (score === 0) {
+      console.log('❌ Score is 0, skipping score submission');
+      return;
+    }
+    
+    if (!gameStartTime) {
+      console.log('❌ No game start time, skipping score submission');
       return;
     }
 
@@ -116,7 +132,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
       const level = Math.floor(score / 100) + 1; // Simple level calculation
       
-      await apiService.submitScore({
+      const scoreData = {
         score,
         level,
         game_duration: gameDuration,
@@ -125,23 +141,30 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
           obstacles_count: obstacles.length,
           power_ups_used: getActivePowerUps().length,
         },
-      });
+      };
       
-      console.log('Score submitted successfully');
+      console.log('📤 Submitting score:', scoreData);
+      
+      const result = await apiService.submitScore(scoreData);
+      
+      console.log('✅ Score submitted successfully:', result);
     } catch (error) {
-      console.error('Failed to submit score:', error);
+      console.error('❌ Failed to submit score:', error);
     }
   }, [isAuthenticated, score, gameStartTime, difficulty, obstacles.length, getActivePowerUps]);
   
   const endGame = useCallback(() => {
+    console.log('🏁 Game ended - endGame called');
     setGameOver(true);
     setScore(current => {
+      console.log('🏁 Final score:', current);
       if (current > highScore) {
         setHighScore(current);
       }
       return current;
     });
     // Submit score after game ends if user is authenticated
+    console.log('🏁 Calling submitScore...');
     submitScore();
   }, [highScore, submitScore]);
   

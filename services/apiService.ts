@@ -2,11 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Choose the appropriate URL for your setup
 const API_BASE_URL = __DEV__ 
-  ? 'http://10.0.2.2:8000/api'  // Android emulator
-  // ? 'http://localhost:8000/api'  // iOS simulator with artisan serve
+  ? 'http://localhost/minigame/LaravelBackend/public/api'  // XAMPP direct path
+  // ? 'http://127.0.0.1:8000/api'  // Laravel artisan serve
+  // ? 'http://10.0.2.2:8000/api'  // Android emulator
   // ? 'http://192.168.1.100:8000/api'  // Replace with your actual IP for physical device
-  // ? 'http://localhost/snake-api/public/api'  // XAMPP setup
-  : 'https://your-production-domain.com/api'; // Production URL
+  : 'https://snake.abelk.dev/api'; // Production URL
 
 export interface User {
   id: number;
@@ -44,6 +44,11 @@ class ApiService {
 
   private async loadToken() {
     try {
+      // Check if we're in a web environment
+      if (typeof window === 'undefined') {
+        // Server-side rendering or Node.js environment
+        return;
+      }
       this.token = await AsyncStorage.getItem('auth_token');
     } catch (error) {
       console.error('Error loading token:', error);
@@ -53,7 +58,9 @@ class ApiService {
   private async saveToken(token: string) {
     try {
       this.token = token;
-      await AsyncStorage.setItem('auth_token', token);
+      if (typeof window !== 'undefined') {
+        await AsyncStorage.setItem('auth_token', token);
+      }
     } catch (error) {
       console.error('Error saving token:', error);
     }
@@ -62,7 +69,9 @@ class ApiService {
   private async removeToken() {
     try {
       this.token = null;
-      await AsyncStorage.removeItem('auth_token');
+      if (typeof window !== 'undefined') {
+        await AsyncStorage.removeItem('auth_token');
+      }
     } catch (error) {
       console.error('Error removing token:', error);
     }
@@ -73,6 +82,7 @@ class ApiService {
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
         ...options.headers,
       },
@@ -80,6 +90,7 @@ class ApiService {
     };
 
     try {
+      console.log(`Making API request to: ${url}`);
       const response = await fetch(url, config);
       const data = await response.json();
 
@@ -89,12 +100,22 @@ class ApiService {
           await this.removeToken();
           throw new Error('Authentication required');
         }
-        throw new Error(data.message || 'API request failed');
+        
+        // Handle Laravel validation errors
+        if (data.errors) {
+          const errorMessages = Object.values(data.errors).flat();
+          throw new Error(errorMessages.join(', '));
+        }
+        
+        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       return data;
     } catch (error) {
       console.error('API Request Error:', error);
+      if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        throw new Error('Network error. Please check your connection and ensure the server is running.');
+      }
       throw error;
     }
   }
@@ -106,15 +127,13 @@ class ApiService {
       body: JSON.stringify({ email, password }),
     });
 
-    if (response.access_token) {
+    // Handle Laravel backend login response
+    if (response.success && response.access_token) {
       await this.saveToken(response.access_token);
-      
-      // Get user data
-      const user = await this.getProfile();
-      return { user, token: response.access_token };
+      return { user: response.user, token: response.access_token };
     }
 
-    throw new Error('Login failed');
+    throw new Error(response.message || 'Login failed');
   }
 
   async register(userData: {
@@ -130,12 +149,13 @@ class ApiService {
       body: JSON.stringify(userData),
     });
 
-    if (response.token) {
+    // Handle Laravel backend register response
+    if (response.success && response.token) {
       await this.saveToken(response.token);
       return { user: response.user, token: response.token };
     }
 
-    throw new Error('Registration failed');
+    throw new Error(response.message || 'Registration failed');
   }
 
   async logout(): Promise<void> {
@@ -162,7 +182,8 @@ class ApiService {
 
   // User methods
   async getProfile(): Promise<User> {
-    return this.request('/user');
+    const response = await this.request('/auth/profile');
+    return response.success ? response.user : response;
   }
 
   async updateProfile(userData: Partial<User>): Promise<User> {

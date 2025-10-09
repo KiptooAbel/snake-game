@@ -1,15 +1,18 @@
 import React from "react";
 import { View, StyleSheet, SafeAreaView, StatusBar } from "react-native";
+import { AuthProvider } from "./contexts/AuthContext";
 import GameScreen from "./app/game";
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      <View style={styles.container}>
-        <GameScreen />
-      </View>
-    </SafeAreaView>
+    <AuthProvider>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <View style={styles.container}>
+          <GameScreen />
+        </View>
+      </SafeAreaView>
+    </AuthProvider>
   );
 }
 

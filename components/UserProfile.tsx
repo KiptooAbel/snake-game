@@ -76,10 +76,14 @@ const UserProfile: React.FC<UserProfileProps> = ({ onClose, onShowLeaderboard })
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('🚪 Logging out user...');
               await logout();
-              onClose();
+              console.log('✅ Logout successful');
+              onClose(); // Close the profile modal
             } catch (error) {
-              console.error('Logout error:', error);
+              console.error('❌ Logout error:', error);
+              // Still close the modal even if logout fails
+              onClose();
             }
           }
         },
