@@ -1,12 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Choose the appropriate URL for your setup
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost/minigame/LaravelBackend/public/api'  // XAMPP direct path
-  // ? 'http://127.0.0.1:8000/api'  // Laravel artisan serve
-  // ? 'http://10.0.2.2:8000/api'  // Android emulator
-  // ? 'http://192.168.1.100:8000/api'  // Replace with your actual IP for physical device
-  : 'https://snake.abelk.dev/api'; // Production URL
+// Force production URL for APK builds (comment out for local development)
+const API_BASE_URL = 'https://snake.abelk.dev/api'; // Production URL
+
+// Uncomment below for local development:
+// const API_BASE_URL = __DEV__ 
+//   ? 'http://192.168.100.50:8000/api'  // Laravel artisan serve accessible from mobile device
+//   // ? 'http://localhost/minigame/LaravelBackend/public/api'  // XAMPP direct path (only for web)
+//   // ? 'http://127.0.0.1:8000/api'  // Laravel artisan serve (only for emulator)
+//   // ? 'http://10.0.2.2:8000/api'  // Android emulator
+//   : 'https://snake.abelk.dev/api'; // Production URL
 
 export interface User {
   id: number;

@@ -1,4 +1,4 @@
-package com.abelkiprop.snakegame
+package com.abelkiprop.chompline
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

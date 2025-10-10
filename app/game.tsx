@@ -23,6 +23,7 @@ const GameScreen: React.FC = () => {
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isCheckingFirstLaunch, setIsCheckingFirstLaunch] = useState(true);
+  const [isFirstTimeAuth, setIsFirstTimeAuth] = useState(false);
   
   const { isAuthenticated } = useAuth();
 
@@ -48,14 +49,21 @@ const GameScreen: React.FC = () => {
     try {
       await AsyncStorage.setItem('hasLaunched', 'true');
       setShowWelcome(false);
+      // Show auth modal when user clicks get started
+      setIsFirstTimeAuth(true);
+      setShowAuthModal(true);
     } catch (error) {
       console.error('Error setting first launch:', error);
       setShowWelcome(false);
+      // Still show auth modal even if AsyncStorage fails
+      setIsFirstTimeAuth(true);
+      setShowAuthModal(true);
     }
   };
 
   const handleAuthPress = () => {
     if (!isAuthenticated) {
+      setIsFirstTimeAuth(false);
       setShowAuthModal(true);
     }
   };
@@ -101,7 +109,11 @@ const GameScreen: React.FC = () => {
           {/* Authentication Flow */}
           <AuthFlow
             visible={showAuthModal}
-            onClose={() => setShowAuthModal(false)}
+            onClose={() => {
+              setShowAuthModal(false);
+              setIsFirstTimeAuth(false);
+            }}
+            isFirstTime={isFirstTimeAuth}
           />
 
           {/* User Profile Modal */}

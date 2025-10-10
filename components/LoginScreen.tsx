@@ -16,9 +16,10 @@ import { useAuth } from '@/contexts/AuthContext';
 interface LoginScreenProps {
   onSwitchToRegister: () => void;
   onClose: () => void;
+  isFirstTime?: boolean;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, isFirstTime = false }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +49,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose }
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Welcome Back!</Text>
-          <Text style={styles.subtitle}>Sign in to track your high scores</Text>
+          <Text style={styles.title}>{isFirstTime ? 'Welcome to Snake Game!' : 'Welcome Back!'}</Text>
+          <Text style={styles.subtitle}>
+            {isFirstTime 
+              ? 'Sign in to start playing and track your scores'
+              : 'Sign in to track your high scores'
+            }
+          </Text>
 
           <View style={styles.inputContainer}>
             <TextInput
@@ -96,7 +102,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose }
           </View>
 
           <TouchableOpacity style={styles.skipButton} onPress={onClose}>
-            <Text style={styles.skipText}>Skip for now</Text>
+            <Text style={styles.skipText}>
+              {isFirstTime ? 'Play as Guest' : 'Skip for now'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

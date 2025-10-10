@@ -88,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({
                 style={styles.authButton} 
                 onPress={onAuthPress}
               >
-                <Text style={styles.authButtonText}>Login</Text>
+                <Text style={styles.authButtonText}>Sign In</Text>
               </TouchableOpacity>
             )}
           </View>

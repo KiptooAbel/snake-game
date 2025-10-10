@@ -1,5 +1,5 @@
 {
-  "name": "snake-game",
+  "name": "chompline",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -12,8 +12,8 @@
     "lint": "expo lint",
     "build:android": "eas build --platform android --profile preview",
     "build:android:production": "eas build --platform android --profile production",
-    "build:local:debug": "cd android && set JAVA_HOME=C:\\Program Files\\Android\\Android Studio\\jbr && set ANDROID_HOME=%LOCALAPPDATA%\\Android\\Sdk && gradlew.bat assembleDebug",
-    "build:local:release": "cd android && set JAVA_HOME=C:\\Program Files\\Android\\Android Studio\\jbr && set ANDROID_HOME=%LOCALAPPDATA%\\Android\\Sdk && gradlew.bat assembleRelease",
+    "build:local:debug": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.16.8-hotspot && set ANDROID_HOME=%LOCALAPPDATA%\\Android\\Sdk && gradlew.bat assembleDebug",
+    "build:local:release": "cd android && set JAVA_HOME=C:\\Program Files\\Microsoft\\jdk-17.0.16.8-hotspot && set ANDROID_HOME=%LOCALAPPDATA%\\Android\\Sdk && gradlew.bat assembleRelease",
     "build:status": "eas build:list --platform android --limit 5",
     "build:clean": "eas build --platform android --profile preview --clear-cache"
   },
