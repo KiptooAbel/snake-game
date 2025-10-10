@@ -28,7 +28,8 @@ const OBSTACLE_SETTINGS = {
 export const useObstacles = (difficulty: string, gridSize: number) => {
   // Get settings based on difficulty
   const getSettings = () => {
-    return OBSTACLE_SETTINGS[difficulty] || OBSTACLE_SETTINGS.MEDIUM;
+    const difficultyKey = difficulty as keyof typeof OBSTACLE_SETTINGS;
+    return OBSTACLE_SETTINGS[difficultyKey] || OBSTACLE_SETTINGS.MEDIUM;
   };
   
   // Generate initial obstacles
@@ -49,14 +50,19 @@ export const useObstacles = (difficulty: string, gridSize: number) => {
     avoidPositions: Position[] = []
   ): ObstaclePosition => {
     const settings = getSettings();
-    let position: Position;
+    let position: Position = { x: 0, y: 0 }; // Initialize with default values
     let isOverlapping = true;
+    
+    // Define safe margin from edges (at least 1 cell from edge)
+    const edgeMargin = Math.max(1, Math.min(3, Math.floor(gridSize * 0.1)));
+    const minPos = edgeMargin;
+    const maxPos = gridSize - edgeMargin - 1;
     
     // Keep generating positions until we find one that doesn't overlap
     while (isOverlapping) {
       position = {
-        x: Math.floor(Math.random() * gridSize),
-        y: Math.floor(Math.random() * gridSize),
+        x: Math.floor(Math.random() * (maxPos - minPos + 1)) + minPos,
+        y: Math.floor(Math.random() * (maxPos - minPos + 1)) + minPos,
       };
       
       // Check if position overlaps with any positions to avoid

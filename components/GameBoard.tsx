@@ -38,7 +38,7 @@ const GameBoard: React.FC = () => {
 
   // Get game dimensions based on difficulty
   const { gameDimensions, getInitialSnake } = useGameDimensions(difficulty);
-  const { GRID_SIZE, CELL_SIZE, BOARD_WIDTH, BOARD_HEIGHT } = gameDimensions;
+  const { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, BOARD_WIDTH, BOARD_HEIGHT } = gameDimensions;
   
   // Get food types and their probabilities
   const { generateFoodType, getFoodProperties } = useFoodTypes(difficulty);
@@ -52,7 +52,7 @@ const GameBoard: React.FC = () => {
     generateObstacle, 
     shouldAddObstacle, 
     checkObstacleCollision 
-  } = useObstacles(difficulty, GRID_SIZE);
+  } = useObstacles(difficulty, Math.max(GRID_WIDTH || GRID_SIZE, GRID_HEIGHT || GRID_SIZE));
   
   // Game state
   const INITIAL_DIRECTION: Position = { x: 1, y: 0 };
@@ -146,10 +146,17 @@ const GameBoard: React.FC = () => {
     let attempts = 0;
     const maxAttempts = 100;
     
+    // Define safe margin from edges (at least 1 cell from edge, more for larger grids)
+    const edgeMargin = Math.max(1, Math.min(3, Math.floor((GRID_WIDTH || GRID_SIZE) * 0.1)));
+    const minX = edgeMargin;
+    const maxX = (GRID_WIDTH || GRID_SIZE) - edgeMargin - 1;
+    const minY = edgeMargin;
+    const maxY = (GRID_HEIGHT || GRID_SIZE) - edgeMargin - 1;
+    
     do {
       newFood = {
-        x: Math.floor(Math.random() * GRID_SIZE),
-        y: Math.floor(Math.random() * GRID_SIZE),
+        x: Math.floor(Math.random() * (maxX - minX + 1)) + minX,
+        y: Math.floor(Math.random() * (maxY - minY + 1)) + minY,
       };
       attempts++;
     } while (
@@ -178,11 +185,11 @@ const GameBoard: React.FC = () => {
         y: newSnake[0].y + nextDirection.y 
       };
 
-      // Handle wall collisions with wrap-around
-      if (head.x < 0) head.x = GRID_SIZE - 1;
-      if (head.x >= GRID_SIZE) head.x = 0;
-      if (head.y < 0) head.y = GRID_SIZE - 1;
-      if (head.y >= GRID_SIZE) head.y = 0;
+      // Handle wall collisions with wrap-around using new grid dimensions
+      if (head.x < 0) head.x = (GRID_WIDTH || GRID_SIZE) - 1;
+      if (head.x >= (GRID_WIDTH || GRID_SIZE)) head.x = 0;
+      if (head.y < 0) head.y = (GRID_HEIGHT || GRID_SIZE) - 1;
+      if (head.y >= (GRID_HEIGHT || GRID_SIZE)) head.y = 0;
 
       // Check for collision with self - add check for invincibility and ghost mode
       if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
@@ -304,7 +311,7 @@ const GameBoard: React.FC = () => {
   }, [handleDirectionChange]);
 
   const swipeGesture = Gesture.Pan()
-    .minDistance(50)
+    .minDistance(30) // Reduced minimum distance for better responsiveness
     .shouldCancelWhenOutside(false)
     .onEnd((event) => {
       if (gameOver || isPaused || !gameStarted) return;
@@ -313,7 +320,7 @@ const GameBoard: React.FC = () => {
         const { translationX, translationY } = event;
         
         // Require minimum swipe distance to prevent accidental triggers
-        const minSwipeDistance = 30;
+        const minSwipeDistance = 20; // Reduced for better sensitivity
         if (Math.abs(translationX) < minSwipeDistance && Math.abs(translationY) < minSwipeDistance) {
           return;
         }
@@ -340,10 +347,10 @@ const GameBoard: React.FC = () => {
     <GestureDetector gesture={swipeGesture}>
       <View 
         style={[
-          styles.gameBoard, 
+          styles.fullScreenGameBoard, 
           { 
             width: BOARD_WIDTH, 
-            height: BOARD_HEIGHT 
+            height: BOARD_HEIGHT,
           }
         ]}
       >
@@ -410,10 +417,29 @@ const GameBoard: React.FC = () => {
 
 // Add the styles definition that was missing
 const styles = StyleSheet.create({
+  fullScreenGameBoard: {
+    backgroundColor: "#0a0a0a", // Slightly darker background for game area distinction
+    position: "relative",
+    flex: 1,
+    borderTopWidth: 1,
+    borderTopColor: "#333", // Subtle top border for additional visual separation
+  },
+  gameBoardContainer: {
+    backgroundColor: "#111", // Darker background for container
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#333",
+    overflow: "hidden",
+    position: "relative",
+    marginHorizontal: 10,
+    marginVertical: 5,
+    justifyContent: "center", // Center the game board within the taller container
+    alignItems: "center",
+  },
   gameBoard: {
     backgroundColor: "#222",
-    borderRadius: 10,
-    borderWidth: 2,
+    borderRadius: 8, // Slightly reduced border radius
+    borderWidth: 1, // Reduced border width
     borderColor: "#444",
     overflow: "hidden",
     position: "relative",
@@ -453,13 +479,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(0, 0, 0, 0.85)", // Darker overlay for better distinction
   },
   startButtonText: {
     fontSize: 32,
     color: "#4CAF50",
     fontWeight: "bold",
     marginBottom: 15,
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    textShadowOffset: {width: -1, height: 1},
+    textShadowRadius: 10,
   },
   difficultyLabel: {
     fontSize: 18,

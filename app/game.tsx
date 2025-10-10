@@ -8,7 +8,6 @@ import { GameProvider } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
-import ControlsContainer from "@/components/ControlsContainer";
 import DifficultySelector from "@/components/DifficultySelector";
 import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
@@ -83,16 +82,21 @@ const GameScreen: React.FC = () => {
         <View style={styles.container}>
           <StatusBar style="light" />
           
-          <Header 
-            onDifficultyPress={() => setShowDifficultyModal(true)}
-            onAuthPress={handleAuthPress}
-            onProfilePress={() => setShowProfileModal(true)}
-            onLeaderboardPress={() => setShowLeaderboardModal(true)}
-          />
+          <View style={styles.headerSection}>
+            <Header 
+              onDifficultyPress={() => setShowDifficultyModal(true)}
+              onAuthPress={handleAuthPress}
+              onProfilePress={() => setShowProfileModal(true)}
+              onLeaderboardPress={() => setShowLeaderboardModal(true)}
+            />
+          </View>
           
-          <GameBoard />
+          {/* Visual separator between header and game area */}
+          <View style={styles.separator} />
           
-          <ControlsContainer />
+          <View style={styles.gameSection}>
+            <GameBoard />
+          </View>
 
           {/* Difficulty Selection Modal */}
           <Modal
@@ -155,7 +159,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#111",
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  headerSection: {
+    width: "100%",
+    paddingTop: 50, // Space from top edge
+    backgroundColor: "#1a1a1a", // Use the color from the welcome screen
+    zIndex: 10, // Ensure header stays on top
+  },
+  separator: {
+    height: 2,
+    backgroundColor: "#333", // Dark separator for dark theme
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  gameSection: {
+    flex: 1,
+    width: "100%",
   },
 });

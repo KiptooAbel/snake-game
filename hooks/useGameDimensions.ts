@@ -6,6 +6,9 @@ import { Dimensions } from 'react-native';
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 
+// Define difficulty type
+type DifficultyType = 'EASY' | 'MEDIUM' | 'HARD';
+
 // Difficulty level configurations
 const DIFFICULTY_SETTINGS = {
   EASY: {
@@ -31,14 +34,33 @@ const DIFFICULTY_SETTINGS = {
 export const useGameDimensions = (difficulty: string) => {
   // Calculate dimensions based on the current difficulty
   const calculateGameDimensions = () => {
-    const gridSize = DIFFICULTY_SETTINGS[difficulty].gridSize;
-    const cellSize = Math.floor(Math.min(windowWidth, windowHeight) / gridSize);
+    const difficultyKey = difficulty as DifficultyType;
+    const baseGridSize = DIFFICULTY_SETTINGS[difficultyKey]?.gridSize || DIFFICULTY_SETTINGS.MEDIUM.gridSize;
+    
+    // Use the full screen width and height
+    const availableWidth = windowWidth;
+    // Reserve space only for the header/buttons at the top (about 100px)
+    const availableHeight = windowHeight - 100;
+    
+    // Calculate appropriate cell size for full screen
+    const targetCellSize = 20; // Target cell size for good gameplay
+    
+    // Calculate grid dimensions based on screen size
+    const horizontalCells = Math.floor(availableWidth / targetCellSize);
+    const verticalCells = Math.floor(availableHeight / targetCellSize);
+    
+    // Calculate actual cell size to fit perfectly
+    const cellWidth = availableWidth / horizontalCells;
+    const cellHeight = availableHeight / verticalCells;
+    const cellSize = Math.min(cellWidth, cellHeight);
     
     return {
-      GRID_SIZE: gridSize,
+      GRID_WIDTH: horizontalCells, // Horizontal grid size
+      GRID_HEIGHT: verticalCells,  // Vertical grid size  
+      GRID_SIZE: baseGridSize, // Keep for compatibility, but we'll use GRID_WIDTH/HEIGHT
       CELL_SIZE: cellSize,
-      BOARD_WIDTH: gridSize * cellSize,
-      BOARD_HEIGHT: gridSize * cellSize
+      BOARD_WIDTH: windowWidth, // Full screen width
+      BOARD_HEIGHT: windowHeight - 100, // Full screen height minus header space
     };
   };
   
@@ -51,8 +73,8 @@ export const useGameDimensions = (difficulty: string) => {
   
   // Get initial snake position based on current grid size
   const getInitialSnake = () => {
-    const middleX = Math.floor(gameDimensions.GRID_SIZE / 2);
-    const middleY = Math.floor(gameDimensions.GRID_SIZE / 2);
+    const middleX = Math.floor(gameDimensions.GRID_WIDTH / 2);
+    const middleY = Math.floor(gameDimensions.GRID_HEIGHT / 2);
     return [
       { x: middleX, y: middleY },
       { x: middleX - 1, y: middleY },
