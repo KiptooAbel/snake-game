@@ -112,6 +112,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     console.log('   - isAuthenticated:', isAuthenticated);
     console.log('   - score:', score);
     console.log('   - gameStartTime:', gameStartTime);
+    console.log('   - API Base URL:', apiService.getApiBaseUrl());
     
     if (!isAuthenticated) {
       console.log('❌ User not authenticated, skipping score submission');
@@ -132,11 +133,20 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
       const level = Math.floor(score / 100) + 1; // Simple level calculation
       
+      // Map frontend difficulty values to backend expected values
+      const difficultyMap: { [key: string]: string } = {
+        'EASY': 'easy',
+        'MEDIUM': 'normal',  // Frontend uses MEDIUM, backend expects normal
+        'HARD': 'hard'
+      };
+      
+      const backendDifficulty = difficultyMap[difficulty] || difficulty.toLowerCase();
+      
       const scoreData = {
         score,
         level,
         game_duration: gameDuration,
-        difficulty: difficulty.toLowerCase(),
+        difficulty: backendDifficulty,
         game_stats: {
           obstacles_count: obstacles.length,
           power_ups_used: getActivePowerUps().length,
@@ -144,12 +154,19 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       };
       
       console.log('📤 Submitting score:', scoreData);
+      console.log('📤 Original difficulty:', difficulty, '→ Mapped difficulty:', backendDifficulty);
+      console.log('📤 API Token available:', !!apiService.getToken());
       
       const result = await apiService.submitScore(scoreData);
       
       console.log('✅ Score submitted successfully:', result);
     } catch (error) {
       console.error('❌ Failed to submit score:', error);
+      // Log more details about the error
+      if (error instanceof Error) {
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+      }
     }
   }, [isAuthenticated, score, gameStartTime, difficulty, obstacles.length, getActivePowerUps]);
   

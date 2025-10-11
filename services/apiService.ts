@@ -1,16 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Choose the appropriate URL for your setup
-// Force production URL for APK builds (comment out for local development)
-const API_BASE_URL = 'https://snake.abelk.dev/api'; // Production URL
+// For local development with XAMPP - use your machine's IP address for device testing
+const API_BASE_URL = __DEV__ 
+  ? 'http://192.168.1.2/minigame/LaravelBackend/public/api'  // XAMPP with local IP for device access
+  : 'https://snake.abelk.dev/api'; // Production URL
 
-// Uncomment below for local development:
-// const API_BASE_URL = __DEV__ 
-//   ? 'http://192.168.100.50:8000/api'  // Laravel artisan serve accessible from mobile device
-//   // ? 'http://localhost/minigame/LaravelBackend/public/api'  // XAMPP direct path (only for web)
-//   // ? 'http://127.0.0.1:8000/api'  // Laravel artisan serve (only for emulator)
-//   // ? 'http://10.0.2.2:8000/api'  // Android emulator
-//   : 'https://snake.abelk.dev/api'; // Production URL
+// Alternative local configurations:
+// const API_BASE_URL = 'http://localhost/minigame/LaravelBackend/public/api';  // XAMPP localhost (web only)
+// const API_BASE_URL = 'http://127.0.0.1:8000/api';  // Laravel artisan serve (emulator only)
 
 export interface User {
   id: number;
@@ -94,11 +92,19 @@ class ApiService {
     };
 
     try {
-      console.log(`Making API request to: ${url}`);
+      console.log(`🌐 Making API request to: ${url}`);
+      console.log(`🌐 Request method: ${config.method || 'GET'}`);
+      console.log(`🌐 Auth token present: ${!!this.token}`);
+      
       const response = await fetch(url, config);
+      console.log(`🌐 Response status: ${response.status} ${response.statusText}`);
+      
       const data = await response.json();
+      console.log(`🌐 Response data:`, data);
 
       if (!response.ok) {
+        console.error(`❌ API Error - Status: ${response.status}, Data:`, data);
+        
         if (response.status === 401) {
           // Token expired or invalid
           await this.removeToken();
@@ -116,7 +122,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API Request Error:', error);
+      console.error('❌ API Request Error:', error);
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         throw new Error('Network error. Please check your connection and ensure the server is running.');
       }
@@ -258,6 +264,10 @@ class ApiService {
 
   getToken(): string | null {
     return this.token;
+  }
+
+  getApiBaseUrl(): string {
+    return API_BASE_URL;
   }
 }
 

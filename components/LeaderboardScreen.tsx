@@ -39,6 +39,8 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose }) => {
 
       let data: LeaderboardEntry[] = [];
       
+      console.log(`🏆 Fetching ${activeTab} leaderboard...`);
+      
       switch (activeTab) {
         case 'global':
           data = await apiService.getGlobalLeaderboard();
@@ -54,10 +56,13 @@ const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ onClose }) => {
           break;
       }
 
+      console.log(`🏆 ${activeTab} leaderboard data:`, data);
+      console.log(`🏆 ${activeTab} leaderboard count:`, data.length);
+      
       setLeaderboard(data);
     } catch (error: any) {
       Alert.alert('Error', 'Failed to load leaderboard');
-      console.error('Leaderboard error:', error);
+      console.error(`❌ ${activeTab} leaderboard error:`, error);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
