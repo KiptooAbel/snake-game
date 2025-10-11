@@ -46,17 +46,17 @@ export default function PowerUpIndicator({
   const getPowerUpProperties = () => {
     switch(type) {
       case 'SPEED_BOOST':
-        return { color: "#2196F3", icon: "⚡", label: "SPEED+" };
+        return { color: "#8B4513", icon: "⚡", label: "SPEED+" }; // Brown theme
       case 'SPEED_SLOW':
-        return { color: "#9C27B0", icon: "🐢", label: "SLOW" };
+        return { color: "#9C27B0", icon: "🐢", label: "SLOW" }; // Purple theme
       case 'DOUBLE_POINTS':
-        return { color: "#4CAF50", icon: "×2", label: "2× PTS" };
+        return { color: "#A0522D", icon: "×2", label: "2× PTS" }; // Dark brown
       case 'INVINCIBILITY':
-        return { color: "#FFC107", icon: "🛡️", label: "INVNC" };
+        return { color: "#D4AF37", icon: "🛡️", label: "INVNC" }; // Golden brown
       case 'GHOST_MODE':
-        return { color: "#E0E0E0", icon: "👻", label: "GHOST" };
+        return { color: "#BA68C8", icon: "👻", label: "GHOST" }; // Light purple
       default:
-        return { color: "#F44336", icon: "?", label: "UNKN" };
+        return { color: "#8B4513", icon: "?", label: "UNKN" }; // Default brown
     }
   };
   
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    backgroundColor: "rgba(139, 69, 19, 0.8)", // Brown background with transparency
     padding: 5,
     borderRadius: 5,
     marginRight: 5,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     width: 40,
     height: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    backgroundColor: "rgba(160, 82, 45, 0.4)", // Brown theme background
     borderRadius: 3,
     overflow: "hidden",
     marginRight: 5,

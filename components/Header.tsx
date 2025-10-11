@@ -47,11 +47,21 @@ const Header: React.FC<HeaderProps> = ({
     }
   };
   
+  // Get level-based header background color
+  const getHeaderBackgroundColor = () => {
+    switch(level) {
+      case 1: return "#1a1a1a"; // Dark for level 1
+      case 2: return "#3E2723"; // Brown for level 2
+      case 3: return "#4A148C"; // Purple for level 3
+      default: return "#1a1a1a";
+    }
+  };
+  
   // If game is active and not over, show game controls
   if (gameStarted && !gameOver) {
     return (
       <View style={styles.headerContainer}>
-        <View style={[styles.gameHeader, styles.gameHeaderBackground]}>
+        <View style={[styles.gameHeader, { backgroundColor: getHeaderBackgroundColor() }]}>
           <View style={styles.gameControls}>
             <TouchableOpacity 
               style={styles.gameButton}
@@ -85,7 +95,7 @@ const Header: React.FC<HeaderProps> = ({
   
   return (
     <View style={styles.headerContainer}>
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: getHeaderBackgroundColor() }]}>
         <View style={styles.scoreContainer}>
           <Text style={styles.scoreText}>Score: {score}</Text>
           <Text style={styles.scoreText}>High Score: {highScore}</Text>
@@ -187,7 +197,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 5, // Reduced margin for more vertical space
     paddingVertical: 8, // Added minimal vertical padding
-    backgroundColor: "#1a1a1a", // Use the welcome screen color
   },
   gameHeader: {
     flexDirection: "row",
@@ -198,25 +207,21 @@ const styles = StyleSheet.create({
     marginBottom: 10, // Increased margin for better spacing from game board
     paddingVertical: 12, // Increased vertical padding for more breathing room
   },
-  gameHeaderBackground: {
-    backgroundColor: "#1a1a1a", // Use the welcome screen color
-    // Removed borderBottomWidth and borderBottomColor to eliminate duplicate border
-  },
   gameControls: {
     flexDirection: "row",
     gap: 10,
   },
   gameButton: {
-    backgroundColor: "#333", // Dark background for buttons
+    backgroundColor: "#8B4513", // Brown theme for buttons
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,
     borderWidth: 1,
-    borderColor: "#555", // Dark border
+    borderColor: "#A0522D", // Darker brown border
   },
   quitButton: {
-    backgroundColor: "#F44336", // Keep red background for quit
-    borderColor: "#F44336",
+    backgroundColor: "#9C27B0", // Purple for quit button
+    borderColor: "#6A1B99",
   },
   gameButtonText: {
     color: "white", // White text for dark background
@@ -274,20 +279,20 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   iconButton: {
-    backgroundColor: "#333", // Dark background
+    backgroundColor: "#8B4513", // Brown theme
     width: 35,
     height: 35,
     borderRadius: 17.5,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#555", // Dark border
+    borderColor: "#A0522D", // Darker brown border
   },
   iconButtonText: {
     fontSize: 16,
   },
   authButton: {
-    backgroundColor: "#4CAF50", // Keep green for auth button
+    backgroundColor: "#9C27B0", // Purple theme for auth button
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 5,

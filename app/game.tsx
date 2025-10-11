@@ -3,7 +3,7 @@ import { View, StyleSheet, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GameProvider } from "@/contexts/GameContext";
+import { GameProvider, useGame } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
@@ -13,6 +13,45 @@ import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
 import LeaderboardScreen from "@/components/LeaderboardScreen";
 import WelcomeScreen from "@/components/WelcomeScreen";
+
+// Internal component that has access to game context
+const GameContent: React.FC<{
+  onModePress: () => void;
+  onLevelPress: () => void;
+  onAuthPress: () => void;
+  onProfilePress: () => void;
+  onLeaderboardPress: () => void;
+}> = ({ onModePress, onLevelPress, onAuthPress, onProfilePress, onLeaderboardPress }) => {
+  const { level } = useGame();
+  
+  // Get level-based header background color
+  const getHeaderBackgroundColor = () => {
+    switch(level) {
+      case 1: return "#1a1a1a"; // Dark for level 1
+      case 2: return "#3E2723"; // Brown for level 2
+      case 3: return "#4A148C"; // Purple for level 3
+      default: return "#1a1a1a";
+    }
+  };
+
+  return (
+    <>
+      <View style={[styles.headerSection, { backgroundColor: getHeaderBackgroundColor() }]}>
+        <Header 
+          onModePress={onModePress}
+          onLevelPress={onLevelPress}
+          onAuthPress={onAuthPress}
+          onProfilePress={onProfilePress}
+          onLeaderboardPress={onLeaderboardPress}
+        />
+      </View>
+      
+      <View style={styles.gameSection}>
+        <GameBoard />
+      </View>
+    </>
+  );
+};
 
 const GameScreen: React.FC = () => {
   // Keep modal states at this level
@@ -83,22 +122,13 @@ const GameScreen: React.FC = () => {
         <View style={styles.container}>
           <StatusBar style="light" />
           
-          <View style={styles.headerSection}>
-            <Header 
-              onModePress={() => setShowModeModal(true)}
-              onLevelPress={() => setShowLevelModal(true)}
-              onAuthPress={handleAuthPress}
-              onProfilePress={() => setShowProfileModal(true)}
-              onLeaderboardPress={() => setShowLeaderboardModal(true)}
-            />
-          </View>
-          
-          {/* Visual separator between header and game area */}
-          <View style={styles.separator} />
-          
-          <View style={styles.gameSection}>
-            <GameBoard />
-          </View>
+          <GameContent 
+            onModePress={() => setShowModeModal(true)}
+            onLevelPress={() => setShowLevelModal(true)}
+            onAuthPress={handleAuthPress}
+            onProfilePress={() => setShowProfileModal(true)}
+            onLeaderboardPress={() => setShowLeaderboardModal(true)}
+          />
 
           {/* Mode Selection Modal */}
           <Modal
@@ -177,21 +207,7 @@ const styles = StyleSheet.create({
   headerSection: {
     width: "100%",
     paddingTop: 50, // Space from top edge
-    backgroundColor: "#1a1a1a", // Use the color from the welcome screen
     zIndex: 10, // Ensure header stays on top
-  },
-  separator: {
-    height: 2,
-    backgroundColor: "#333", // Dark separator for dark theme
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
   },
   gameSection: {
     flex: 1,

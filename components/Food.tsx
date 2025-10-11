@@ -46,8 +46,8 @@ export default function Food({
         };
       case 'SPEED_BOOST':
         return {
-          color: "#2196F3", // Blue
-          secondaryColor: "#0D47A1", // Darker blue
+          color: "#8B4513", // Brown theme
+          secondaryColor: "#A0522D", // Darker brown
           pulseDuration: 300,
           pulseScale: 1.25,
           rotationDuration: 1200,
@@ -55,8 +55,8 @@ export default function Food({
         };
       case 'SPEED_SLOW':
         return {
-          color: "#9C27B0", // Purple
-          secondaryColor: "#4A148C", // Darker purple
+          color: "#9C27B0", // Purple theme
+          secondaryColor: "#6A1B99", // Darker purple
           pulseDuration: 600,
           pulseScale: 1.2,
           rotationDuration: 2500,
@@ -64,8 +64,8 @@ export default function Food({
         };
       case 'DOUBLE_POINTS':
         return {
-          color: "#4CAF50", // Green
-          secondaryColor: "#2E7D32", // Darker green
+          color: "#A0522D", // Dark brown
+          secondaryColor: "#8B4513", // Medium brown
           pulseDuration: 400,
           pulseScale: 1.3,
           rotationDuration: 2000,
@@ -73,8 +73,8 @@ export default function Food({
         };
       case 'INVINCIBILITY':
         return {
-          color: "#FFC107", // Amber
-          secondaryColor: "#FF8F00", // Darker amber
+          color: "#D4AF37", // Golden brown
+          secondaryColor: "#B8860B", // Darker golden brown
           pulseDuration: 350,
           pulseScale: 1.4,
           rotationDuration: 1500,
@@ -82,8 +82,8 @@ export default function Food({
         };
       case 'GHOST_MODE':
         return {
-          color: "#E0E0E0", // Light gray
-          secondaryColor: "#9E9E9E", // Darker gray
+          color: "#BA68C8", // Light purple
+          secondaryColor: "#8E24AA", // Medium purple
           pulseDuration: 450,
           pulseScale: 1.35,
           rotationDuration: 2200,
