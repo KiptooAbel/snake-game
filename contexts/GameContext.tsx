@@ -23,6 +23,7 @@ interface GameContextType {
   score: number;
   highScore: number;
   mode: string;
+  level: number;
   isPaused: boolean;
   gameOver: boolean;
   gameStarted: boolean;
@@ -33,6 +34,7 @@ interface GameContextType {
   setScore: (score: number) => void;
   setHighScore: (score: number) => void;
   setMode: (mode: string) => void;
+  setLevel: (level: number) => void;
   togglePause: () => void;
   startGame: () => void;
   endGame: () => void;
@@ -64,6 +66,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [mode, setMode] = useState("NORMAL");
+  const [level, setLevel] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -210,6 +213,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     score,
     highScore,
     mode,
+    level,
     isPaused,
     gameOver,
     gameStarted,
@@ -220,6 +224,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setScore,
     setHighScore,
     setMode,
+    setLevel,
     togglePause,
     startGame,
     endGame,

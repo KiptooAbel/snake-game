@@ -7,6 +7,7 @@ import PowerUpsDisplay from "@/components/PowerUpsDisplay";
 
 interface HeaderProps {
   onModePress: () => void;
+  onLevelPress: () => void;
   onAuthPress: () => void;
   onProfilePress: () => void;
   onLeaderboardPress: () => void;
@@ -14,12 +15,13 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ 
   onModePress, 
+  onLevelPress,
   onAuthPress, 
   onProfilePress, 
   onLeaderboardPress 
 }) => {
   // Get game state from context
-  const { score, highScore, mode, gameStarted, gameOver, isPaused, togglePause, endGame } = useGame();
+  const { score, highScore, mode, level, gameStarted, gameOver, isPaused, togglePause, endGame } = useGame();
   const { isAuthenticated, user } = useAuth();
   
   // Determine if mode can be changed (only when game is not active)
@@ -32,6 +34,15 @@ const Header: React.FC<HeaderProps> = ({
       case "NORMAL": return "#FFC107"; // Amber
       case "HARD": return "#F44336"; // Red
       default: return "#FFC107";
+    }
+  };
+  
+  // Get level button color
+  const getLevelColor = () => {
+    switch(level) {
+      case 1: return "#4CAF50"; // Green for level 1
+      case 2: return "#8B4513"; // Brown for level 2
+      default: return "#4CAF50";
     }
   };
   
@@ -83,24 +94,46 @@ const Header: React.FC<HeaderProps> = ({
         </View>
         
         <View style={styles.rightContainer}>
-          <TouchableOpacity 
-            style={[
-              styles.difficultyButton,
-              { 
-                borderColor: getModeColor(),
-                opacity: canChangeMode ? 1 : 0.5 
-              }
-            ]}
-            onPress={canChangeMode ? onModePress : undefined}
-            disabled={!canChangeMode}
-          >
-            <Text style={[
-              styles.difficultyButtonText,
-              { color: getModeColor() }
-            ]}>
-              {mode}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.gameSettingsContainer}>
+            <TouchableOpacity 
+              style={[
+                styles.difficultyButton,
+                { 
+                  borderColor: getModeColor(),
+                  opacity: canChangeMode ? 1 : 0.5 
+                }
+              ]}
+              onPress={canChangeMode ? onModePress : undefined}
+              disabled={!canChangeMode}
+            >
+              <Text style={[
+                styles.difficultyButtonText,
+                { color: getModeColor() }
+              ]}>
+                {mode}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[
+                styles.difficultyButton,
+                styles.levelButton,
+                { 
+                  borderColor: getLevelColor(),
+                  opacity: canChangeMode ? 1 : 0.5 
+                }
+              ]}
+              onPress={canChangeMode ? onLevelPress : undefined}
+              disabled={!canChangeMode}
+            >
+              <Text style={[
+                styles.difficultyButtonText,
+                { color: getLevelColor() }
+              ]}>
+                Level {level}
+              </Text>
+            </TouchableOpacity>
+          </View>
           
           {/* Authentication and user buttons */}
           <View style={styles.authContainer}>
@@ -215,6 +248,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
+  gameSettingsContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
   difficultyButton: {
     backgroundColor: "#333", // Dark background
     paddingVertical: 8,
@@ -222,8 +259,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 2,
   },
+  levelButton: {
+    minWidth: 70, // Ensure consistent width for level button
+  },
   difficultyButtonText: {
     fontWeight: "bold",
+    fontSize: 12,
+    textAlign: "center",
     // Color will be set dynamically based on difficulty
   },
   authContainer: {

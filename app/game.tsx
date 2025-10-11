@@ -1,4 +1,3 @@
-// Refactored game.tsx - Main container component
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -9,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
 import ModeSelector from "@/components/ModeSelector";
+import LevelSelector from "@/components/LevelSelector";
 import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
 import LeaderboardScreen from "@/components/LeaderboardScreen";
@@ -17,6 +17,7 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 const GameScreen: React.FC = () => {
   // Keep modal states at this level
   const [showModeModal, setShowModeModal] = useState(false);
+  const [showLevelModal, setShowLevelModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
@@ -85,6 +86,7 @@ const GameScreen: React.FC = () => {
           <View style={styles.headerSection}>
             <Header 
               onModePress={() => setShowModeModal(true)}
+              onLevelPress={() => setShowLevelModal(true)}
               onAuthPress={handleAuthPress}
               onProfilePress={() => setShowProfileModal(true)}
               onLeaderboardPress={() => setShowLeaderboardModal(true)}
@@ -107,6 +109,18 @@ const GameScreen: React.FC = () => {
           >
             <ModeSelector
               onClose={() => setShowModeModal(false)}
+            />
+          </Modal>
+
+          {/* Level Selection Modal */}
+          <Modal
+            visible={showLevelModal}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setShowLevelModal(false)}
+          >
+            <LevelSelector
+              onClose={() => setShowLevelModal(false)}
             />
           </Modal>
 

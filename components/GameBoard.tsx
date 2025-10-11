@@ -1,4 +1,3 @@
-// Modified GameBoard.tsx with power-up integration and styles
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { GestureDetector, Gesture } from "react-native-gesture-handler";
@@ -17,6 +16,7 @@ const GameBoard: React.FC = () => {
   // Get game state and methods from context
   const {
     mode,
+    level,
     gameStarted,
     gameOver,
     isPaused,
@@ -169,11 +169,21 @@ const GameBoard: React.FC = () => {
         y: newSnake[0].y + nextDirection.y 
       };
 
-      // Handle wall collisions with wrap-around using new grid dimensions
-      if (head.x < 0) head.x = (GRID_WIDTH || GRID_SIZE) - 1;
-      if (head.x >= (GRID_WIDTH || GRID_SIZE)) head.x = 0;
-      if (head.y < 0) head.y = (GRID_HEIGHT || GRID_SIZE) - 1;
-      if (head.y >= (GRID_HEIGHT || GRID_SIZE)) head.y = 0;
+      // Handle wall collisions based on level
+      if (level === 1) {
+        // Level 1: Wrap-around walls (current behavior)
+        if (head.x < 0) head.x = (GRID_WIDTH || GRID_SIZE) - 1;
+        if (head.x >= (GRID_WIDTH || GRID_SIZE)) head.x = 0;
+        if (head.y < 0) head.y = (GRID_HEIGHT || GRID_SIZE) - 1;
+        if (head.y >= (GRID_HEIGHT || GRID_SIZE)) head.y = 0;
+      } else if (level === 2) {
+        // Level 2: Solid walls that end the game
+        if (head.x < 0 || head.x >= (GRID_WIDTH || GRID_SIZE) || 
+            head.y < 0 || head.y >= (GRID_HEIGHT || GRID_SIZE)) {
+          endGame();
+          return;
+        }
+      }
 
       // Check for collision with self - add check for invincibility and ghost mode
       if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
@@ -197,9 +207,9 @@ const GameBoard: React.FC = () => {
         if (foodProps.powerUpEffect) {
           // Activate the power-up
           activatePowerUp(
-            foodProps.powerUpEffect,
+            foodProps.powerUpEffect as any,
             foodProps.duration,
-            foodProps.speedFactor
+            (foodProps as any).speedFactor
           );
         }
         
@@ -243,6 +253,7 @@ const GameBoard: React.FC = () => {
     nextDirection, 
     score, 
     mode, 
+    level,
     isPowerUpActive, 
     getPowerUpSpeedFactor
   ]);
@@ -323,6 +334,7 @@ const GameBoard: React.FC = () => {
           { 
             width: BOARD_WIDTH, 
             height: BOARD_HEIGHT,
+            backgroundColor: level === 2 ? "#3E2723" : "#0a0a0a", // Brown for level 2, dark for level 1
           }
         ]}
       >
@@ -345,11 +357,24 @@ const GameBoard: React.FC = () => {
               >
                 <Text style={styles.startButtonText}>START GAME</Text>
                 <Text style={styles.difficultyLabel}>Mode: {mode}</Text>
-                <Text style={styles.startHint}>Tap to change mode</Text>
+                <Text style={styles.difficultyLabel}>Level: {level}</Text>
+                <Text style={styles.startHint}>Tap to change mode or level</Text>
               </TouchableOpacity>
             ) : (
               <>
-                {/* No obstacles rendered */}
+                {/* Render walls for level 2 */}
+                {level === 2 && (
+                  <>
+                    {/* Top wall */}
+                    <View style={[styles.wall, styles.topWall, { width: BOARD_WIDTH }]} />
+                    {/* Bottom wall */}
+                    <View style={[styles.wall, styles.bottomWall, { width: BOARD_WIDTH, bottom: 0 }]} />
+                    {/* Left wall */}
+                    <View style={[styles.wall, styles.leftWall, { height: BOARD_HEIGHT }]} />
+                    {/* Right wall */}
+                    <View style={[styles.wall, styles.rightWall, { height: BOARD_HEIGHT, right: 0 }]} />
+                  </>
+                )}
                 
                 <Snake snake={snake} cellSize={CELL_SIZE} />
                 <Food 
@@ -475,7 +500,33 @@ const styles = StyleSheet.create({
   powerUpText: {
     color: "white",
     fontWeight: "bold",
-  }
+  },
+  wall: {
+    position: "absolute",
+    backgroundColor: "#8B4513", // Brown color for walls
+    borderWidth: 1,
+    borderColor: "#A0522D",
+  },
+  topWall: {
+    top: 0,
+    left: 0,
+    height: 4,
+  },
+  bottomWall: {
+    position: "absolute",
+    left: 0,
+    height: 4,
+  },
+  leftWall: {
+    top: 0,
+    left: 0,
+    width: 4,
+  },
+  rightWall: {
+    position: "absolute",
+    top: 0,
+    width: 4,
+  },
 });
 
 export default GameBoard;
