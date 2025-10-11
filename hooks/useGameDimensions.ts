@@ -6,7 +6,7 @@ import { Dimensions } from 'react-native';
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 
-export const useGameDimensions = () => {
+export const useGameDimensions = (level: number = 1) => {
   // Calculate consistent game dimensions regardless of mode
   const calculateGameDimensions = () => {
     // Use the full screen width and height
@@ -38,10 +38,23 @@ export const useGameDimensions = () => {
 
   const [gameDimensions, setGameDimensions] = useState(calculateGameDimensions());
 
-  // Get initial snake position based on current grid size
+  // Get initial snake position based on current grid size and level
   const getInitialSnake = () => {
     const middleX = Math.floor(gameDimensions.GRID_WIDTH / 2);
     const middleY = Math.floor(gameDimensions.GRID_HEIGHT / 2);
+    
+    // For level 3, avoid the corner L-walls and center horizontal walls
+    if (level === 3) {
+      // Place snake in the upper middle area, away from obstacles
+      const safeX = middleX;
+      const safeY = Math.floor(gameDimensions.GRID_HEIGHT / 3); // Upper third
+      return [
+        { x: safeX, y: safeY },
+        { x: safeX - 1, y: safeY },
+      ];
+    }
+    
+    // Default position for levels 1 and 2
     return [
       { x: middleX, y: middleY },
       { x: middleX - 1, y: middleY },

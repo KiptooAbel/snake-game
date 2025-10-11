@@ -27,6 +27,12 @@ const levelInfo = {
     description: "Walled arena - Hitting walls ends the game",
     color: ["#8B4513", "#A0522D"], // Brown gradient
     backgroundColor: "#3E2723", // Brown background
+  },
+  3: {
+    name: "LEVEL 3",
+    description: "Maze challenge - L-corners & center barriers",
+    color: ["#9C27B0", "#6A1B99"], // Purple gradient
+    backgroundColor: "#4A148C", // Purple background
   }
 };
 
@@ -89,6 +95,7 @@ export default function LevelSelector({
             <View style={styles.optionsContainer}>
               {renderLevelOption(1)}
               {renderLevelOption(2)}
+              {renderLevelOption(3)}
             </View>
             
             <View style={styles.levelDetails}>
@@ -102,6 +109,11 @@ export default function LevelSelector({
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>LEVEL 2:</Text>
                 <Text style={styles.detailText}>Walled arena - avoid the boundaries!</Text>
+              </View>
+              
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>LEVEL 3:</Text>
+                <Text style={styles.detailText}>L-shaped corners & horizontal barriers</Text>
               </View>
             </View>
             
@@ -149,10 +161,10 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#8B4513',
+    color: '#9C27B0',
     textAlign: 'center',
     marginBottom: 20,
-    textShadowColor: '#8B4513',
+    textShadowColor: '#9C27B0',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
   },

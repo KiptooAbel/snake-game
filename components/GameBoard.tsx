@@ -33,8 +33,8 @@ const GameBoard: React.FC = () => {
     getPowerUpSpeedFactor
   } = useGame();
 
-  // Get game dimensions (no longer mode-dependent)
-  const { gameDimensions, getInitialSnake } = useGameDimensions();
+  // Get game dimensions (now level-dependent for initial snake position)
+  const { gameDimensions, getInitialSnake } = useGameDimensions(level);
   const { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, BOARD_WIDTH, BOARD_HEIGHT } = gameDimensions;
   
   // Get food types and their probabilities
@@ -98,16 +98,16 @@ const GameBoard: React.FC = () => {
   useEffect(() => {
     const initialSnake = getInitialSnake();
     setFood(generateFoodForSnake(initialSnake));
-  }, [gameDimensions]);
+  }, [gameDimensions, level]);
 
-  // Update snake position when difficulty changes
+  // Update snake position when difficulty or level changes
   useEffect(() => {
     if (gameStarted) {
       resetGame();
     } else {
       setSnake(getInitialSnake());
     }
-  }, [gameDimensions]);
+  }, [gameDimensions, level]);
 
   // Reset game - completely reset all game state
   const resetGame = () => {
@@ -125,7 +125,7 @@ const GameBoard: React.FC = () => {
     // Generate new obstacles - REMOVED (no obstacles)
   };
   
-  // Generate food that doesn't conflict with snake or obstacles
+  // Generate food that doesn't conflict with snake, obstacles, or level-specific hazards
   const generateFoodForSnake = (currentSnake: Position[]) => {
     let newFood: Position;
     let attempts = 0;
@@ -138,6 +138,36 @@ const GameBoard: React.FC = () => {
     const minY = edgeMargin;
     const maxY = (GRID_HEIGHT || GRID_SIZE) - edgeMargin - 1;
     
+    // Helper function to check if position conflicts with level 3 obstacles
+    const isOnCenterObstacle = (pos: Position) => {
+      if (level !== 3) return false;
+      
+      const gridWidth = GRID_WIDTH || GRID_SIZE;
+      const gridHeight = GRID_HEIGHT || GRID_SIZE;
+      const centerY = Math.floor(gridHeight / 2);
+      
+      // Calculate horizontal walls dimensions (40% of width instead of 60%, centered)
+      const wallLength = Math.floor(gridWidth * 0.4);
+      const wallStartX = Math.floor((gridWidth - wallLength) / 2);
+      const wallEndX = wallStartX + wallLength - 1;
+      
+      return (
+        // Two parallel horizontal walls in the center with 6 cells apart (3 cells each side of center)
+        (pos.y === centerY - 3 && pos.x >= wallStartX && pos.x <= wallEndX) ||
+        (pos.y === centerY + 3 && pos.x >= wallStartX && pos.x <= wallEndX) ||
+        
+        // L-shaped walls at corners (6x10 - taller vertically, shorter horizontally)
+        // Top-left L: extends 6 cells right, 10 cells down
+        (pos.x <= 5 && pos.y <= 9 && (pos.x === 0 || pos.y === 0)) ||
+        // Top-right L: extends 6 cells left, 10 cells down  
+        (pos.x >= gridWidth - 6 && pos.y <= 9 && (pos.x === gridWidth - 1 || pos.y === 0)) ||
+        // Bottom-left L: extends 6 cells right, 10 cells up
+        (pos.x <= 5 && pos.y >= gridHeight - 10 && (pos.x === 0 || pos.y === gridHeight - 1)) ||
+        // Bottom-right L: extends 6 cells left, 10 cells up
+        (pos.x >= gridWidth - 6 && pos.y >= gridHeight - 10 && (pos.x === gridWidth - 1 || pos.y === gridHeight - 1))
+      );
+    };
+    
     do {
       newFood = {
         x: Math.floor(Math.random() * (maxX - minX + 1)) + minX,
@@ -147,8 +177,9 @@ const GameBoard: React.FC = () => {
     } while (
       attempts < maxAttempts && (
         // Check collision with snake
-        currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y)
-        // No obstacle collision check needed
+        currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
+        // Check collision with center obstacles in level 3
+        isOnCenterObstacle(newFood)
       )
     );
     
@@ -183,11 +214,50 @@ const GameBoard: React.FC = () => {
           endGame();
           return;
         }
+      } else if (level === 3) {
+        // Level 3: Wrapping walls like level 1, but with center obstacles
+        if (head.x < 0) head.x = (GRID_WIDTH || GRID_SIZE) - 1;
+        if (head.x >= (GRID_WIDTH || GRID_SIZE)) head.x = 0;
+        if (head.y < 0) head.y = (GRID_HEIGHT || GRID_SIZE) - 1;
+        if (head.y >= (GRID_HEIGHT || GRID_SIZE)) head.y = 0;
       }
 
       // Check for collision with self - add check for invincibility and ghost mode
       if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
         if (!isPowerUpActive('INVINCIBILITY') && !isPowerUpActive('GHOST_MODE')) {
+          endGame();
+          return;
+        }
+      }
+      
+      // Check for collision with center obstacles in level 3
+      if (level === 3) {
+        const gridWidth = GRID_WIDTH || GRID_SIZE;
+        const gridHeight = GRID_HEIGHT || GRID_SIZE;
+        const centerY = Math.floor(gridHeight / 2);
+        
+        // Calculate horizontal walls dimensions (40% of width instead of 60%, centered)
+        const wallLength = Math.floor(gridWidth * 0.4);
+        const wallStartX = Math.floor((gridWidth - wallLength) / 2);
+        const wallEndX = wallStartX + wallLength - 1;
+        
+        const isObstacle = (
+          // Two parallel horizontal walls in the center with 6 cells apart (3 cells each side of center)
+          (head.y === centerY - 3 && head.x >= wallStartX && head.x <= wallEndX) ||
+          (head.y === centerY + 3 && head.x >= wallStartX && head.x <= wallEndX) ||
+          
+          // L-shaped walls at corners (6x10 - taller vertically, shorter horizontally)
+          // Top-left L: extends 6 cells right, 10 cells down
+          (head.x <= 5 && head.y <= 9 && (head.x === 0 || head.y === 0)) ||
+          // Top-right L: extends 6 cells left, 10 cells down  
+          (head.x >= gridWidth - 6 && head.y <= 9 && (head.x === gridWidth - 1 || head.y === 0)) ||
+          // Bottom-left L: extends 6 cells right, 10 cells up
+          (head.x <= 5 && head.y >= gridHeight - 10 && (head.x === 0 || head.y === gridHeight - 1)) ||
+          // Bottom-right L: extends 6 cells left, 10 cells up
+          (head.x >= gridWidth - 6 && head.y >= gridHeight - 10 && (head.x === gridWidth - 1 || head.y === gridHeight - 1))
+        );
+        
+        if (isObstacle && !isPowerUpActive('GHOST_MODE')) {
           endGame();
           return;
         }
@@ -326,6 +396,69 @@ const GameBoard: React.FC = () => {
       }
     });
 
+  // Helper function to get background color based on level
+  const getBackgroundColor = () => {
+    switch(level) {
+      case 1: return "#0a0a0a"; // Dark for level 1
+      case 2: return "#3E2723"; // Brown for level 2  
+      case 3: return "#4A148C"; // Purple for level 3
+      default: return "#0a0a0a";
+    }
+  };
+
+  // Render center obstacles for level 3
+  const renderCenterObstacles = () => {
+    const gridWidth = GRID_WIDTH || GRID_SIZE;
+    const gridHeight = GRID_HEIGHT || GRID_SIZE;
+    const centerY = Math.floor(gridHeight / 2);
+    const obstacles = [];
+
+    // Calculate horizontal walls dimensions (40% of width instead of 60%, centered)
+    const wallLength = Math.floor(gridWidth * 0.4);
+    const wallStartX = Math.floor((gridWidth - wallLength) / 2);
+    const wallEndX = wallStartX + wallLength - 1;
+
+    // Create all obstacle positions
+    for (let x = 0; x < gridWidth; x++) {
+      for (let y = 0; y < gridHeight; y++) {
+        const isObstacle = (
+          // Two parallel horizontal walls in the center with 6 cells apart (3 cells each side of center)
+          (y === centerY - 3 && x >= wallStartX && x <= wallEndX) ||
+          (y === centerY + 3 && x >= wallStartX && x <= wallEndX) ||
+          
+          // L-shaped walls at corners (6x10 - taller vertically, shorter horizontally)
+          // Top-left L: extends 6 cells right, 10 cells down
+          (x <= 5 && y <= 9 && (x === 0 || y === 0)) ||
+          // Top-right L: extends 6 cells left, 10 cells down  
+          (x >= gridWidth - 6 && y <= 9 && (x === gridWidth - 1 || y === 0)) ||
+          // Bottom-left L: extends 6 cells right, 10 cells up
+          (x <= 5 && y >= gridHeight - 10 && (x === 0 || y === gridHeight - 1)) ||
+          // Bottom-right L: extends 6 cells left, 10 cells up
+          (x >= gridWidth - 6 && y >= gridHeight - 10 && (x === gridWidth - 1 || y === gridHeight - 1))
+        );
+
+        if (isObstacle) {
+          obstacles.push(
+            <View
+              key={`obstacle-${x}-${y}`}
+              style={[
+                styles.centerObstacle,
+                {
+                  left: x * CELL_SIZE,
+                  top: y * CELL_SIZE,
+                  width: CELL_SIZE,
+                  height: CELL_SIZE,
+                }
+              ]}
+            />
+          );
+        }
+      }
+    }
+
+    return obstacles;
+  };
+
   return (
     <GestureDetector gesture={swipeGesture}>
       <View 
@@ -334,7 +467,7 @@ const GameBoard: React.FC = () => {
           { 
             width: BOARD_WIDTH, 
             height: BOARD_HEIGHT,
-            backgroundColor: level === 2 ? "#3E2723" : "#0a0a0a", // Brown for level 2, dark for level 1
+            backgroundColor: getBackgroundColor(),
           }
         ]}
       >
@@ -373,6 +506,13 @@ const GameBoard: React.FC = () => {
                     <View style={[styles.wall, styles.leftWall, { height: BOARD_HEIGHT }]} />
                     {/* Right wall */}
                     <View style={[styles.wall, styles.rightWall, { height: BOARD_HEIGHT, right: 0 }]} />
+                  </>
+                )}
+                
+                {/* Render center obstacles for level 3 */}
+                {level === 3 && (
+                  <>
+                    {renderCenterObstacles()}
                   </>
                 )}
                 
@@ -526,6 +666,18 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     width: 4,
+  },
+  centerObstacle: {
+    position: "absolute",
+    backgroundColor: "#9C27B0", // Purple color for level 3 obstacles
+    borderWidth: 1,
+    borderColor: "#BA68C8",
+    borderRadius: 2,
+    shadowColor: "#9C27B0",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+    elevation: 5,
   },
 });
 

@@ -42,6 +42,7 @@ const Header: React.FC<HeaderProps> = ({
     switch(level) {
       case 1: return "#4CAF50"; // Green for level 1
       case 2: return "#8B4513"; // Brown for level 2
+      case 3: return "#9C27B0"; // Purple for level 3
       default: return "#4CAF50";
     }
   };
