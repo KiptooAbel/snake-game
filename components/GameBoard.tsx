@@ -16,7 +16,7 @@ import { useGame, Position, ObstaclePosition } from "@/contexts/GameContext";
 const GameBoard: React.FC = () => {
   // Get game state and methods from context
   const {
-    difficulty,
+    mode,
     gameStarted,
     gameOver,
     isPaused,
@@ -27,32 +27,29 @@ const GameBoard: React.FC = () => {
     endGame,
     restartGame,
     setDirectionChangeCallback,
-    obstacles,
-    setObstacles,
-    addObstacle,
     // Power-up related methods
     isPowerUpActive,
     activatePowerUp,
     getPowerUpSpeedFactor
   } = useGame();
 
-  // Get game dimensions based on difficulty
-  const { gameDimensions, getInitialSnake } = useGameDimensions(difficulty);
+  // Get game dimensions (no longer mode-dependent)
+  const { gameDimensions, getInitialSnake } = useGameDimensions();
   const { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, BOARD_WIDTH, BOARD_HEIGHT } = gameDimensions;
   
   // Get food types and their probabilities
-  const { generateFoodType, getFoodProperties } = useFoodTypes(difficulty);
+  const { generateFoodType, getFoodProperties } = useFoodTypes(mode);
   
-  // Get game speed based on score and difficulty
-  const { getSpeed } = useGameSpeed(difficulty);
+  // Get game speed based on score and mode
+  const { getSpeed } = useGameSpeed(mode);
   
-  // Get obstacle utilities based on grid size and difficulty
+  // Get obstacle utilities (now returns empty/no-op functions)
   const { 
     generateInitialObstacles, 
     generateObstacle, 
     shouldAddObstacle, 
     checkObstacleCollision 
-  } = useObstacles(difficulty, Math.max(GRID_WIDTH || GRID_SIZE, GRID_HEIGHT || GRID_SIZE));
+  } = useObstacles();
   
   // Game state
   const INITIAL_DIRECTION: Position = { x: 1, y: 0 };
@@ -86,21 +83,11 @@ const GameBoard: React.FC = () => {
     }
   }, [gameStarted, gameOver]);
   
-  // Initialize obstacles when the game starts for the first time
-  useEffect(() => {
-    if (gameStarted && obstacles.length === 0 && !gameOver) {
-      const initialObstacles = generateInitialObstacles();
-      setObstacles(initialObstacles);
-    }
-  }, [gameStarted, obstacles.length, gameOver]);
-  
-  // Reset obstacles when difficulty changes
-  useEffect(() => {
-    if (gameStarted) {
-      const initialObstacles = generateInitialObstacles();
-      setObstacles(initialObstacles);
-    }
-  }, [difficulty]);
+  // Initialize obstacles when the game starts for the first time - REMOVED
+  // No obstacles logic needed anymore
+
+  // Reset obstacles when difficulty changes - REMOVED  
+  // No obstacles logic needed anymore
   
   // Generate food in a position not occupied by the snake or obstacles
   const generateFood = () => {
@@ -135,9 +122,7 @@ const GameBoard: React.FC = () => {
     const newFood = generateFoodForSnake(initialSnake);
     setFood(newFood);
     
-    // Generate new obstacles
-    const initialObstacles = generateInitialObstacles();
-    setObstacles(initialObstacles);
+    // Generate new obstacles - REMOVED (no obstacles)
   };
   
   // Generate food that doesn't conflict with snake or obstacles
@@ -162,9 +147,8 @@ const GameBoard: React.FC = () => {
     } while (
       attempts < maxAttempts && (
         // Check collision with snake
-        currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
-        // Check collision with obstacles
-        checkObstacleCollision(newFood, obstacles)
+        currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y)
+        // No obstacle collision check needed
       )
     );
     
@@ -199,13 +183,8 @@ const GameBoard: React.FC = () => {
         }
       }
       
-      // Check for collision with obstacles - add check for invincibility
-      if (checkObstacleCollision(head, obstacles)) {
-        if (!isPowerUpActive('INVINCIBILITY')) {
-          endGame();
-          return;
-        }
-      }
+      // Check for collision with obstacles - REMOVED (no obstacles)
+      // No obstacle collision needed
 
       newSnake.unshift(head);
 
@@ -236,14 +215,8 @@ const GameBoard: React.FC = () => {
         setScore(newScore);
         setLastScore(newScore);
         
-        // Check if we should add a new obstacle based on score
-        if (shouldAddObstacle(newScore, obstacles.length)) {
-          const newObstacle = generateObstacle([
-            ...newSnake.map(segment => ({ x: segment.x, y: segment.y })),
-            food
-          ]);
-          addObstacle(newObstacle);
-        }
+        // Check if we should add a new obstacle - REMOVED (no obstacles)
+        // No obstacle logic needed
         
         const newFood = generateFoodForSnake(newSnake);
         setFood(newFood);
@@ -269,8 +242,7 @@ const GameBoard: React.FC = () => {
     gameStarted, 
     nextDirection, 
     score, 
-    difficulty, 
-    obstacles, 
+    mode, 
     isPowerUpActive, 
     getPowerUpSpeedFactor
   ]);
@@ -362,7 +334,7 @@ const GameBoard: React.FC = () => {
             score={score} 
             highScore={highScore} 
             onRestart={restartGame}
-            difficulty={difficulty} 
+            difficulty={mode} 
           />
         ) : (
           <>
@@ -372,27 +344,19 @@ const GameBoard: React.FC = () => {
                 onPress={startGame}
               >
                 <Text style={styles.startButtonText}>START GAME</Text>
-                <Text style={styles.difficultyLabel}>Difficulty: {difficulty}</Text>
-                <Text style={styles.startHint}>Tap to change difficulty</Text>
+                <Text style={styles.difficultyLabel}>Mode: {mode}</Text>
+                <Text style={styles.startHint}>Tap to change mode</Text>
               </TouchableOpacity>
             ) : (
               <>
-                {/* Render all obstacles */}
-                {obstacles.map((obstacle, index) => (
-                  <Obstacle
-                    key={`obstacle-${index}`}
-                    position={obstacle.position}
-                    cellSize={CELL_SIZE}
-                    type={obstacle.type}
-                  />
-                ))}
+                {/* No obstacles rendered */}
                 
                 <Snake snake={snake} cellSize={CELL_SIZE} />
                 <Food 
                   position={food} 
                   cellSize={CELL_SIZE} 
                   foodType={foodType as any} 
-                  difficulty={difficulty} 
+                  difficulty={mode} 
                 />
                 
                 {isPaused && (

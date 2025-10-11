@@ -1,14 +1,14 @@
-// useGameSpeed.ts - Hook for calculating game speed based on score and difficulty
+// useGameSpeed.ts - Hook for calculating game speed based on score and mode
 import { useState, useEffect } from 'react';
 
-// Difficulty level configurations for speed
+// Mode level configurations for speed
 const SPEED_SETTINGS = {
   EASY: {
     baseSpeed: 200,
     speedIncrement: 1, // ms reduction per point
     maxSpeedReduction: 80, // Maximum speed reduction
   },
-  MEDIUM: {
+  NORMAL: {
     baseSpeed: 150,
     speedIncrement: 2, // ms reduction per point
     maxSpeedReduction: 100, // Maximum speed reduction
@@ -20,10 +20,12 @@ const SPEED_SETTINGS = {
   }
 };
 
-export const useGameSpeed = (difficulty: string) => {
-  // Calculate game speed based on score and difficulty
+export const useGameSpeed = (mode: string) => {
+  // Calculate game speed based on score and mode
   const getSpeed = (score: number) => {
-    const { baseSpeed, speedIncrement, maxSpeedReduction } = SPEED_SETTINGS[difficulty];
+    const modeKey = mode as keyof typeof SPEED_SETTINGS;
+    const settings = SPEED_SETTINGS[modeKey] || SPEED_SETTINGS.NORMAL;
+    const { baseSpeed, speedIncrement, maxSpeedReduction } = settings;
     const minSpeed = baseSpeed - maxSpeedReduction; // Fastest speed (minimum interval)
     const speedReduction = Math.min(score * speedIncrement, maxSpeedReduction);
     return baseSpeed - speedReduction;

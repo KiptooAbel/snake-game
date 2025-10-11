@@ -22,27 +22,23 @@ interface GameContextType {
   // Game state
   score: number;
   highScore: number;
-  difficulty: string;
+  mode: string;
   isPaused: boolean;
   gameOver: boolean;
   gameStarted: boolean;
   showControls: boolean;
-  obstacles: ObstaclePosition[];
   gameStartTime: number | null;
   
   // Game methods
   setScore: (score: number) => void;
   setHighScore: (score: number) => void;
-  setDifficulty: (difficulty: string) => void;
+  setMode: (mode: string) => void;
   togglePause: () => void;
   startGame: () => void;
   endGame: () => void;
   restartGame: () => void;
   toggleControls: () => void;
   handleDirectionChange: (direction: Position) => void;
-  setObstacles: (obstacles: ObstaclePosition[]) => void;
-  addObstacle: (obstacle: ObstaclePosition) => void;
-  removeObstacle: (position: Position) => void;
   submitScore: () => Promise<void>;
   
   // Power-up methods
@@ -67,12 +63,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Game state
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [difficulty, setDifficulty] = useState("MEDIUM");
+  const [mode, setMode] = useState("NORMAL");
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [obstacles, setObstacles] = useState<ObstaclePosition[]>([]);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
   
   // Get auth context
@@ -133,14 +128,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
       const level = Math.floor(score / 100) + 1; // Simple level calculation
       
-      // Map frontend difficulty values to backend expected values
-      const difficultyMap: { [key: string]: string } = {
+      // Map frontend mode values to backend expected values
+      const modeMap: { [key: string]: string } = {
         'EASY': 'easy',
-        'MEDIUM': 'normal',  // Frontend uses MEDIUM, backend expects normal
+        'NORMAL': 'normal',
         'HARD': 'hard'
       };
       
-      const backendDifficulty = difficultyMap[difficulty] || difficulty.toLowerCase();
+      const backendDifficulty = modeMap[mode] || mode.toLowerCase();
       
       const scoreData = {
         score,
@@ -148,13 +143,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         game_duration: gameDuration,
         difficulty: backendDifficulty,
         game_stats: {
-          obstacles_count: obstacles.length,
+          obstacles_count: 0, // Since obstacles are removed
           power_ups_used: getActivePowerUps().length,
         },
       };
       
       console.log('📤 Submitting score:', scoreData);
-      console.log('📤 Original difficulty:', difficulty, '→ Mapped difficulty:', backendDifficulty);
+      console.log('📤 Original mode:', mode, '→ Mapped difficulty:', backendDifficulty);
       console.log('📤 API Token available:', !!apiService.getToken());
       
       const result = await apiService.submitScore(scoreData);
@@ -168,7 +163,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         console.error('❌ Error stack:', error.stack);
       }
     }
-  }, [isAuthenticated, score, gameStartTime, difficulty, obstacles.length, getActivePowerUps]);
+  }, [isAuthenticated, score, gameStartTime, mode, getActivePowerUps]);
   
   const endGame = useCallback(() => {
     console.log('🏁 Game ended - endGame called');
@@ -198,20 +193,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setShowControls(prev => !prev);
   }, []);
   
-  // Add a new obstacle
-  const addObstacle = useCallback((obstacle: ObstaclePosition) => {
-    setObstacles(prev => [...prev, obstacle]);
-  }, []);
-  
-  // Remove an obstacle at a specific position
-  const removeObstacle = useCallback((position: Position) => {
-    setObstacles(prev => 
-      prev.filter(obstacle => 
-        obstacle.position.x !== position.x || obstacle.position.y !== position.y
-      )
-    );
-  }, []);
-  
   // This function will be passed to the ControlPad component
   const handleDirectionChange = useCallback((direction: Position) => {
     console.log("Handling direction change in context:", direction);
@@ -228,27 +209,23 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     // State
     score,
     highScore,
-    difficulty,
+    mode,
     isPaused,
     gameOver,
     gameStarted,
     showControls,
-    obstacles,
     gameStartTime,
     
     // Methods
     setScore,
     setHighScore,
-    setDifficulty,
+    setMode,
     togglePause,
     startGame,
     endGame,
     restartGame,
     toggleControls,
     handleDirectionChange,
-    setObstacles,
-    addObstacle,
-    removeObstacle,
     submitScore,
     
     // Power-up methods
@@ -271,7 +248,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 // Custom hook to use the game context
 export const useGame = (): GameContextType => {
   const context = useContext(GameContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useGame must be used within a GameProvider');
   }
   return context;

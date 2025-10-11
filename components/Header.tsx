@@ -6,30 +6,30 @@ import { useAuth } from "@/contexts/AuthContext";
 import PowerUpsDisplay from "@/components/PowerUpsDisplay";
 
 interface HeaderProps {
-  onDifficultyPress: () => void;
+  onModePress: () => void;
   onAuthPress: () => void;
   onProfilePress: () => void;
   onLeaderboardPress: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  onDifficultyPress, 
+  onModePress, 
   onAuthPress, 
   onProfilePress, 
   onLeaderboardPress 
 }) => {
   // Get game state from context
-  const { score, highScore, difficulty, gameStarted, gameOver, isPaused, togglePause, endGame } = useGame();
+  const { score, highScore, mode, gameStarted, gameOver, isPaused, togglePause, endGame } = useGame();
   const { isAuthenticated, user } = useAuth();
   
-  // Determine if difficulty can be changed (only when game is not active)
-  const canChangeDifficulty = !gameStarted || gameOver;
+  // Determine if mode can be changed (only when game is not active)
+  const canChangeMode = !gameStarted || gameOver;
   
-  // Get difficulty button color
-  const getDifficultyColor = () => {
-    switch(difficulty) {
+  // Get mode button color
+  const getModeColor = () => {
+    switch(mode) {
       case "EASY": return "#4CAF50"; // Green
-      case "MEDIUM": return "#FFC107"; // Amber
+      case "NORMAL": return "#FFC107"; // Amber
       case "HARD": return "#F44336"; // Red
       default: return "#FFC107";
     }
@@ -87,18 +87,18 @@ const Header: React.FC<HeaderProps> = ({
             style={[
               styles.difficultyButton,
               { 
-                borderColor: getDifficultyColor(),
-                opacity: canChangeDifficulty ? 1 : 0.5 
+                borderColor: getModeColor(),
+                opacity: canChangeMode ? 1 : 0.5 
               }
             ]}
-            onPress={canChangeDifficulty ? onDifficultyPress : undefined}
-            disabled={!canChangeDifficulty}
+            onPress={canChangeMode ? onModePress : undefined}
+            disabled={!canChangeMode}
           >
             <Text style={[
               styles.difficultyButtonText,
-              { color: getDifficultyColor() }
+              { color: getModeColor() }
             ]}>
-              {difficulty}
+              {mode}
             </Text>
           </TouchableOpacity>
           

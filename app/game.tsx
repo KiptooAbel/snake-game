@@ -8,7 +8,7 @@ import { GameProvider } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
-import DifficultySelector from "@/components/DifficultySelector";
+import ModeSelector from "@/components/ModeSelector";
 import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
 import LeaderboardScreen from "@/components/LeaderboardScreen";
@@ -16,7 +16,7 @@ import WelcomeScreen from "@/components/WelcomeScreen";
 
 const GameScreen: React.FC = () => {
   // Keep modal states at this level
-  const [showDifficultyModal, setShowDifficultyModal] = useState(false);
+  const [showModeModal, setShowModeModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
@@ -84,7 +84,7 @@ const GameScreen: React.FC = () => {
           
           <View style={styles.headerSection}>
             <Header 
-              onDifficultyPress={() => setShowDifficultyModal(true)}
+              onModePress={() => setShowModeModal(true)}
               onAuthPress={handleAuthPress}
               onProfilePress={() => setShowProfileModal(true)}
               onLeaderboardPress={() => setShowLeaderboardModal(true)}
@@ -98,15 +98,15 @@ const GameScreen: React.FC = () => {
             <GameBoard />
           </View>
 
-          {/* Difficulty Selection Modal */}
+          {/* Mode Selection Modal */}
           <Modal
-            visible={showDifficultyModal}
+            visible={showModeModal}
             transparent={true}
             animationType="fade"
-            onRequestClose={() => setShowDifficultyModal(false)}
+            onRequestClose={() => setShowModeModal(false)}
           >
-            <DifficultySelector
-              onClose={() => setShowDifficultyModal(false)}
+            <ModeSelector
+              onClose={() => setShowModeModal(false)}
             />
           </Modal>
 
