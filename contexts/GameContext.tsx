@@ -22,7 +22,6 @@ interface GameContextType {
   // Game state
   score: number;
   highScore: number;
-  mode: string;
   level: number;
   isPaused: boolean;
   gameOver: boolean;
@@ -36,7 +35,6 @@ interface GameContextType {
   // Game methods
   setScore: (score: number) => void;
   setHighScore: (score: number) => void;
-  setMode: (mode: string) => void;
   setLevel: (level: number) => void;
   togglePause: () => void;
   startGame: () => void;
@@ -77,7 +75,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Game state
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [mode, setMode] = useState("NORMAL");
   const [level, setLevel] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -147,20 +144,11 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
       const level = Math.floor(score / 100) + 1; // Simple level calculation
       
-      // Map frontend mode values to backend expected values
-      const modeMap: { [key: string]: string } = {
-        'EASY': 'easy',
-        'NORMAL': 'normal',
-        'HARD': 'hard'
-      };
-      
-      const backendDifficulty = modeMap[mode] || mode.toLowerCase();
-      
       const scoreData = {
         score,
         level,
         game_duration: gameDuration,
-        difficulty: backendDifficulty,
+        difficulty: 'normal',
         game_stats: {
           obstacles_count: 0, // Since obstacles are removed
           power_ups_used: getActivePowerUps().length,
@@ -168,7 +156,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       };
       
       console.log('📤 Submitting score:', scoreData);
-      console.log('📤 Original mode:', mode, '→ Mapped difficulty:', backendDifficulty);
       console.log('📤 API Token available:', !!apiService.getToken());
       
       const result = await apiService.submitScore(scoreData);
@@ -182,7 +169,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         console.error('❌ Error stack:', error.stack);
       }
     }
-  }, [isAuthenticated, score, gameStartTime, mode, getActivePowerUps]);
+  }, [isAuthenticated, score, gameStartTime, getActivePowerUps]);
   
   const endGame = useCallback(() => {
     console.log('🏁 Game ended - endGame called');
@@ -292,7 +279,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     // State
     score,
     highScore,
-    mode,
     level,
     isPaused,
     gameOver,
@@ -306,7 +292,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     // Methods
     setScore,
     setHighScore,
-    setMode,
     setLevel,
     togglePause,
     startGame,

@@ -6,14 +6,12 @@ import { useGame } from "@/contexts/GameContext";
 interface GameOverProps {
   score: number;
   highScore: number;
-  difficulty: string;
   onRestart: () => void;
 }
 
 export default function GameOver({ 
   score, 
   highScore, 
-  difficulty, 
   onRestart 
 }: GameOverProps) {
   // Animation refs
@@ -22,16 +20,6 @@ export default function GameOver({
 
   // Is this a new high score?
   const isNewHighScore = score >= highScore && score > 0;
-
-  // Get color based on difficulty
-  const getDifficultyColor = () => {
-    switch(difficulty) {
-      case "EASY": return "#4CAF50"; // Green
-      case "MEDIUM": return "#FFC107"; // Amber
-      case "HARD": return "#F44336"; // Red
-      default: return "#FFC107";
-    }
-  };
 
   useEffect(() => {
     // Run entrance animations
@@ -65,9 +53,6 @@ export default function GameOver({
       <View style={styles.scoreContainer}>
         <Text style={styles.scoreText}>Your Score: {score}</Text>
         <Text style={styles.scoreText}>High Score: {highScore}</Text>
-        <Text style={[styles.difficultyText, { color: getDifficultyColor() }]}>
-          Difficulty: {difficulty}
-        </Text>
       </View>
       
       {isNewHighScore && (
@@ -87,15 +72,6 @@ export default function GameOver({
       <Text style={styles.tipText}>
         Tip: Swipe or use the control pad to change direction
       </Text>
-      
-      {/* Show difficulty achievement message */}
-      {difficulty === "HARD" && score > 10 && (
-        <View style={styles.achievementContainer}>
-          <Text style={styles.achievementText}>
-            Impressive! You scored {score} points on HARD mode!
-          </Text>
-        </View>
-      )}
     </Animated.View>
   );
 }

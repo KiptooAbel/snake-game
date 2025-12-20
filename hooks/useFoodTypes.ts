@@ -1,49 +1,49 @@
 // Modified useFoodTypes.ts - Extended with power-up types
 import { useState, useEffect } from 'react';
 
-// Food types and their properties
+// Food types and their properties (using normal difficulty probabilities)
 const FOOD_TYPES = {
   REGULAR: { 
     points: 5, 
-    probability: { EASY: 0.60, NORMAL: 0.70, HARD: 0.80 },
+    probability: 0.70,
     powerUpEffect: null,
     duration: 0
   },
   GOLDEN: { 
     points: 3, 
-    probability: { EASY: 0.15, NORMAL: 0.10, HARD: 0.05 },
+    probability: 0.10,
     powerUpEffect: null,
     duration: 0
   },
   SPEED_BOOST: { 
     points: 1, 
-    probability: { EASY: 0.07, NORMAL: 0.05, HARD: 0.04 },
+    probability: 0.05,
     powerUpEffect: "SPEED_BOOST",
     duration: 5000, // 5 seconds
     speedFactor: 0.7 // 30% speed increase
   },
   SPEED_SLOW: { 
     points: 1, 
-    probability: { EASY: 0.06, NORMAL: 0.05, HARD: 0.04 },
+    probability: 0.05,
     powerUpEffect: "SPEED_SLOW",
     duration: 5000,
     speedFactor: 1.5 // 50% speed decrease
   },
   DOUBLE_POINTS: { 
     points: 1, 
-    probability: { EASY: 0.05, NORMAL: 0.04, HARD: 0.03 },
+    probability: 0.04,
     powerUpEffect: "DOUBLE_POINTS",
     duration: 10000 // 10 seconds
   },
   INVINCIBILITY: { 
     points: 1, 
-    probability: { EASY: 0.04, NORMAL: 0.03, HARD: 0.02 },
+    probability: 0.03,
     powerUpEffect: "INVINCIBILITY",
     duration: 5000 // 5 seconds
   },
   GHOST_MODE: { 
     points: 1, 
-    probability: { EASY: 0.03, NORMAL: 0.03, HARD: 0.02 },
+    probability: 0.03,
     powerUpEffect: "GHOST_MODE",
     duration: 8000 // 8 seconds
   },
@@ -51,43 +51,42 @@ const FOOD_TYPES = {
   RUBY: {
     points: 5, // Regular score points
     rewardPoints: 10, // Special reward points for unlocking levels
-    probability: { EASY: 0, NORMAL: 0, HARD: 0 }, // Not spawned randomly
+    probability: 0, // Not spawned randomly
     powerUpEffect: null,
     duration: 0
   },
   EMERALD: {
     points: 10,
     rewardPoints: 25,
-    probability: { EASY: 0, NORMAL: 0, HARD: 0 },
+    probability: 0,
     powerUpEffect: null,
     duration: 0
   },
   DIAMOND: {
     points: 20,
     rewardPoints: 50,
-    probability: { EASY: 0, NORMAL: 0, HARD: 0 },
+    probability: 0,
     powerUpEffect: null,
     duration: 0
   },
   HEART: {
     points: 5,
-    probability: { EASY: 0, NORMAL: 0, HARD: 0 }, // Not spawned randomly
+    probability: 0, // Not spawned randomly
     powerUpEffect: null,
     duration: 0,
     givesHeart: true // Special property to indicate it gives a heart
   }
 };
 
-export const useFoodTypes = (mode: string) => {
-  // Generate a food type based on probability distribution for current mode
+export const useFoodTypes = () => {
+  // Generate a food type based on probability distribution
   const generateFoodType = (): string => {
     const random = Math.random();
     let cumulativeProbability = 0;
     
-    // Check each food type's probability for the current mode
+    // Check each food type's probability
     for (const [type, props] of Object.entries(FOOD_TYPES)) {
-      const modeKey = mode as keyof typeof props.probability;
-      cumulativeProbability += props.probability[modeKey] || props.probability.NORMAL;
+      cumulativeProbability += props.probability;
       if (random <= cumulativeProbability) {
         return type;
       }

@@ -16,7 +16,6 @@ import { useGame, Position, ObstaclePosition } from "@/contexts/GameContext";
 const GameBoard: React.FC = () => {
   // Get game state and methods from context
   const {
-    mode,
     level,
     gameStarted,
     gameOver,
@@ -48,10 +47,10 @@ const GameBoard: React.FC = () => {
   const { GRID_SIZE, GRID_WIDTH, GRID_HEIGHT, CELL_SIZE, BOARD_WIDTH, BOARD_HEIGHT } = gameDimensions;
   
   // Get food types and their probabilities
-  const { generateFoodType, getFoodProperties } = useFoodTypes(mode);
+  const { generateFoodType, getFoodProperties } = useFoodTypes();
   
-  // Get game speed based on score and mode
-  const { getSpeed } = useGameSpeed(mode);
+  // Get game speed based on score
+  const { getSpeed } = useGameSpeed();
   
   // Get obstacle utilities (now returns empty/no-op functions)
   const { 
@@ -428,7 +427,6 @@ const GameBoard: React.FC = () => {
     gameStarted, 
     nextDirection, 
     score, 
-    mode, 
     level,
     isPowerUpActive, 
     getPowerUpSpeedFactor,
@@ -586,7 +584,6 @@ const GameBoard: React.FC = () => {
             score={score} 
             highScore={highScore} 
             onRestart={restartGame}
-            difficulty={mode} 
           />
         ) : (
           <>
@@ -596,9 +593,8 @@ const GameBoard: React.FC = () => {
                 onPress={startGame}
               >
                 <Text style={styles.startButtonText}>START GAME</Text>
-                <Text style={styles.difficultyLabel}>Mode: {mode}</Text>
                 <Text style={styles.difficultyLabel}>Level: {level}</Text>
-                <Text style={styles.startHint}>Tap to change mode or level</Text>
+                <Text style={styles.startHint}>Tap to change level</Text>
               </TouchableOpacity>
             ) : (
               <>
@@ -628,7 +624,6 @@ const GameBoard: React.FC = () => {
                   position={food} 
                   cellSize={CELL_SIZE} 
                   foodType={foodType as any} 
-                  difficulty={mode} 
                 />
                 
                 {isPaused && (

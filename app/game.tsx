@@ -7,7 +7,6 @@ import { GameProvider, useGame } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
-import ModeSelector from "@/components/ModeSelector";
 import LevelSelector from "@/components/LevelSelector";
 import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
@@ -17,13 +16,12 @@ import HeartShop from "@/components/HeartShop";
 
 // Internal component that has access to game context
 const GameContent: React.FC<{
-  onModePress: () => void;
   onLevelPress: () => void;
   onAuthPress: () => void;
   onProfilePress: () => void;
   onLeaderboardPress: () => void;
   onShopPress: () => void;
-}> = ({ onModePress, onLevelPress, onAuthPress, onProfilePress, onLeaderboardPress, onShopPress }) => {
+}> = ({ onLevelPress, onAuthPress, onProfilePress, onLeaderboardPress, onShopPress }) => {
   const { level } = useGame();
   
   // Get level-based header background color
@@ -40,7 +38,6 @@ const GameContent: React.FC<{
     <>
       <View style={[styles.headerSection, { backgroundColor: getHeaderBackgroundColor() }]}>
         <Header 
-          onModePress={onModePress}
           onLevelPress={onLevelPress}
           onAuthPress={onAuthPress}
           onProfilePress={onProfilePress}
@@ -58,7 +55,6 @@ const GameContent: React.FC<{
 
 const GameScreen: React.FC = () => {
   // Keep modal states at this level
-  const [showModeModal, setShowModeModal] = useState(false);
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -127,25 +123,12 @@ const GameScreen: React.FC = () => {
           <StatusBar style="light" />
           
           <GameContent 
-            onModePress={() => setShowModeModal(true)}
             onLevelPress={() => setShowLevelModal(true)}
             onAuthPress={handleAuthPress}
             onProfilePress={() => setShowProfileModal(true)}
             onLeaderboardPress={() => setShowLeaderboardModal(true)}
             onShopPress={() => setShowShopModal(true)}
           />
-
-          {/* Mode Selection Modal */}
-          <Modal
-            visible={showModeModal}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setShowModeModal(false)}
-          >
-            <ModeSelector
-              onClose={() => setShowModeModal(false)}
-            />
-          </Modal>
 
           {/* Level Selection Modal */}
           <Modal

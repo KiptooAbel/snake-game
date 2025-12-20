@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import PowerUpsDisplay from "@/components/PowerUpsDisplay";
 
 interface HeaderProps {
-  onModePress: () => void;
   onLevelPress: () => void;
   onAuthPress: () => void;
   onProfilePress: () => void;
@@ -15,7 +14,6 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  onModePress, 
   onLevelPress,
   onAuthPress, 
   onProfilePress, 
@@ -23,21 +21,8 @@ const Header: React.FC<HeaderProps> = ({
   onShopPress
 }) => {
   // Get game state from context
-  const { score, highScore, mode, level, gameStarted, gameOver, isPaused, togglePause, endGame, rewardPoints, hearts } = useGame();
+  const { score, highScore, level, gameStarted, gameOver, isPaused, togglePause, endGame, rewardPoints, hearts } = useGame();
   const { isAuthenticated, user } = useAuth();
-  
-  // Determine if mode can be changed (only when game is not active)
-  const canChangeMode = !gameStarted || gameOver;
-  
-  // Get mode button color
-  const getModeColor = () => {
-    switch(mode) {
-      case "EASY": return "#4CAF50"; // Green
-      case "NORMAL": return "#FFC107"; // Amber
-      case "HARD": return "#F44336"; // Red
-      default: return "#FFC107";
-    }
-  };
   
   // Get level button color
   const getLevelColor = () => {
@@ -115,33 +100,14 @@ const Header: React.FC<HeaderProps> = ({
             <TouchableOpacity 
               style={[
                 styles.difficultyButton,
-                { 
-                  borderColor: getModeColor(),
-                  opacity: canChangeMode ? 1 : 0.5 
-                }
-              ]}
-              onPress={canChangeMode ? onModePress : undefined}
-              disabled={!canChangeMode}
-            >
-              <Text style={[
-                styles.difficultyButtonText,
-                { color: getModeColor() }
-              ]}>
-                {mode}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[
-                styles.difficultyButton,
                 styles.levelButton,
                 { 
                   borderColor: getLevelColor(),
-                  opacity: canChangeMode ? 1 : 0.5 
+                  opacity: (!gameStarted || gameOver) ? 1 : 0.5 
                 }
               ]}
-              onPress={canChangeMode ? onLevelPress : undefined}
-              disabled={!canChangeMode}
+              onPress={(!gameStarted || gameOver) ? onLevelPress : undefined}
+              disabled={gameStarted && !gameOver}
             >
               <Text style={[
                 styles.difficultyButtonText,

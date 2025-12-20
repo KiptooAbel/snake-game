@@ -19,14 +19,12 @@ interface FoodProps {
   position: Position;
   cellSize: number;
   foodType?: FoodType;
-  difficulty?: string;
 }
 
 export default function Food({ 
   position, 
   cellSize, 
-  foodType = 'REGULAR',
-  difficulty = 'MEDIUM'
+  foodType = 'REGULAR'
 }: FoodProps) {
   // Create animations for effects
   const pulseAnim = useRef(new Animated.Value(1)).current;
