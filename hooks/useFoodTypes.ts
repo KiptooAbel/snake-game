@@ -68,6 +68,13 @@ const FOOD_TYPES = {
     probability: { EASY: 0, NORMAL: 0, HARD: 0 },
     powerUpEffect: null,
     duration: 0
+  },
+  HEART: {
+    points: 5,
+    probability: { EASY: 0, NORMAL: 0, HARD: 0 }, // Not spawned randomly
+    powerUpEffect: null,
+    duration: 0,
+    givesHeart: true // Special property to indicate it gives a heart
   }
 };
 

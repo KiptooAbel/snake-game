@@ -13,6 +13,7 @@ import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
 import LeaderboardScreen from "@/components/LeaderboardScreen";
 import WelcomeScreen from "@/components/WelcomeScreen";
+import HeartShop from "@/components/HeartShop";
 
 // Internal component that has access to game context
 const GameContent: React.FC<{
@@ -21,7 +22,8 @@ const GameContent: React.FC<{
   onAuthPress: () => void;
   onProfilePress: () => void;
   onLeaderboardPress: () => void;
-}> = ({ onModePress, onLevelPress, onAuthPress, onProfilePress, onLeaderboardPress }) => {
+  onShopPress: () => void;
+}> = ({ onModePress, onLevelPress, onAuthPress, onProfilePress, onLeaderboardPress, onShopPress }) => {
   const { level } = useGame();
   
   // Get level-based header background color
@@ -43,6 +45,7 @@ const GameContent: React.FC<{
           onAuthPress={onAuthPress}
           onProfilePress={onProfilePress}
           onLeaderboardPress={onLeaderboardPress}
+          onShopPress={onShopPress}
         />
       </View>
       
@@ -60,6 +63,7 @@ const GameScreen: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [isCheckingFirstLaunch, setIsCheckingFirstLaunch] = useState(true);
   const [isFirstTimeAuth, setIsFirstTimeAuth] = useState(false);
@@ -128,6 +132,7 @@ const GameScreen: React.FC = () => {
             onAuthPress={handleAuthPress}
             onProfilePress={() => setShowProfileModal(true)}
             onLeaderboardPress={() => setShowLeaderboardModal(true)}
+            onShopPress={() => setShowShopModal(true)}
           />
 
           {/* Mode Selection Modal */}
@@ -191,6 +196,12 @@ const GameScreen: React.FC = () => {
               onClose={() => setShowLeaderboardModal(false)}
             />
           </Modal>
+
+          {/* Heart Shop Modal */}
+          <HeartShop
+            visible={showShopModal}
+            onClose={() => setShowShopModal(false)}
+          />
         </View>
       </GameProvider>
     </GestureHandlerRootView>

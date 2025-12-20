@@ -6,6 +6,7 @@ import Food from "@/components/Food";
 import Obstacle from "@/components/Obstacle";
 import GameOver from "@/components/GameOver";
 import PowerUpsDisplay from "@/components/PowerUpsDisplay";
+import ContinueGameModal from "@/components/ContinueGameModal";
 import { useGameDimensions } from "@/hooks/useGameDimensions";
 import { useFoodTypes } from "@/hooks/useFoodTypes";
 import { useGameSpeed } from "@/hooks/useGameSpeed";
@@ -31,6 +32,11 @@ const GameBoard: React.FC = () => {
     fruitsEaten,
     addRewardPoints,
     incrementFruitsEaten,
+    // Heart methods
+    hearts,
+    addHeart,
+    useHeart,
+    hasHearts,
     // Power-up related methods
     isPowerUpActive,
     activatePowerUp,
@@ -63,6 +69,7 @@ const GameBoard: React.FC = () => {
   const [food, setFood] = useState<Position>({ x: 10, y: 10 });
   const [foodType, setFoodType] = useState<string>("REGULAR");
   const [lastScore, setLastScore] = useState<number>(0);
+  const [showContinueModal, setShowContinueModal] = useState<boolean>(false);
   
   // Refs for game loop and current direction
   const gameLoopRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -100,6 +107,10 @@ const GameBoard: React.FC = () => {
   
   // Determine next food type - spawn special reward fruits after certain number of regular fruits
   const determineNextFoodType = () => {
+    // Every 20 fruits eaten, spawn a HEART
+    if ((fruitsEaten + 1) % 20 === 0) {
+      return "HEART";
+    }
     // Every 15 fruits eaten, spawn a RUBY
     if ((fruitsEaten + 1) % 15 === 0) {
       return "RUBY";
@@ -121,6 +132,63 @@ const GameBoard: React.FC = () => {
     const initialSnake = getInitialSnake();
     setFood(generateFoodForSnake(initialSnake));
   }, [gameDimensions, level]);
+
+  // Handle game failure - check for hearts before showing game over
+  const handleGameFailure = () => {
+    if (hasHearts()) {
+      // Show continue modal
+      setShowContinueModal(true);
+    } else {
+      // No hearts, end the game
+      endGame();
+    }
+  };
+
+  // Handle continue button press
+  const handleContinue = () => {
+    if (useHeart()) {
+      // Successfully used a heart, hide modal and continue playing
+      setShowContinueModal(false);
+      
+      // Reset snake to center position but keep its current length
+      const currentLength = snake.length;
+      const initialSnake = getInitialSnake();
+      const centerX = initialSnake[0].x;
+      const centerY = initialSnake[0].y;
+      
+      // Create a new snake at center with the same length as before
+      const centerSnake: Position[] = [];
+      for (let i = 0; i < currentLength; i++) {
+        centerSnake.push({
+          x: centerX - i,
+          y: centerY
+        });
+      }
+      setSnake(centerSnake);
+      
+      // Reset direction to initial direction (moving right)
+      setDirection(INITIAL_DIRECTION);
+      setNextDirection(INITIAL_DIRECTION);
+      directionRef.current = INITIAL_DIRECTION;
+      
+      // Generate new food position that doesn't conflict with the reset snake
+      const newFood = generateFoodForSnake(centerSnake);
+      setFood(newFood);
+      
+      // Activate invincibility for 5 seconds to allow player to move away safely
+      activatePowerUp('INVINCIBILITY', 5000);
+    } else {
+      // Failed to use heart (shouldn't happen), end game
+      setShowContinueModal(false);
+      endGame();
+    }
+  };
+
+  // Handle end game from continue modal
+  const handleEndFromModal = () => {
+    setShowContinueModal(false);
+    endGame();
+  };
 
   // Update snake position when difficulty or level changes
   useEffect(() => {
@@ -210,7 +278,7 @@ const GameBoard: React.FC = () => {
 
   // Game loop
   useEffect(() => {
-    if (gameOver || isPaused || !gameStarted) return;
+    if (gameOver || isPaused || !gameStarted || showContinueModal) return;
     
     const moveSnake = () => {
       // Update current direction to next direction
@@ -233,7 +301,7 @@ const GameBoard: React.FC = () => {
         // Level 2: Solid walls that end the game
         if (head.x < 0 || head.x >= (GRID_WIDTH || GRID_SIZE) || 
             head.y < 0 || head.y >= (GRID_HEIGHT || GRID_SIZE)) {
-          endGame();
+          handleGameFailure();
           return;
         }
       } else if (level === 3) {
@@ -247,7 +315,7 @@ const GameBoard: React.FC = () => {
       // Check for collision with self - add check for invincibility and ghost mode
       if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
         if (!isPowerUpActive('INVINCIBILITY') && !isPowerUpActive('GHOST_MODE')) {
-          endGame();
+          handleGameFailure();
           return;
         }
       }
@@ -280,7 +348,7 @@ const GameBoard: React.FC = () => {
         );
         
         if (isObstacle && !isPowerUpActive('GHOST_MODE')) {
-          endGame();
+          handleGameFailure();
           return;
         }
       }
@@ -322,6 +390,11 @@ const GameBoard: React.FC = () => {
           addRewardPoints((foodProps as any).rewardPoints);
         }
         
+        // Add heart if this is a heart food
+        if ((foodProps as any).givesHeart) {
+          addHeart();
+        }
+        
         // Increment fruits eaten counter (for tracking when to spawn special fruits)
         incrementFruitsEaten();
         
@@ -358,7 +431,8 @@ const GameBoard: React.FC = () => {
     mode, 
     level,
     isPowerUpActive, 
-    getPowerUpSpeedFactor
+    getPowerUpSpeedFactor,
+    showContinueModal
   ]);
 
   // Handle direction changes from controls and gestures
@@ -572,6 +646,14 @@ const GameBoard: React.FC = () => {
             )}
           </>
         )}
+        
+        {/* Continue Game Modal */}
+        <ContinueGameModal
+          visible={showContinueModal}
+          heartsRemaining={hearts}
+          onContinue={handleContinue}
+          onGameOver={handleEndFromModal}
+        />
       </View>
     </GestureDetector>
   );

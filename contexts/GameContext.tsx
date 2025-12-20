@@ -31,6 +31,7 @@ interface GameContextType {
   gameStartTime: number | null;
   rewardPoints: number; // Points earned from special fruits to unlock levels
   fruitsEaten: number; // Track how many fruits eaten to trigger special fruits
+  hearts: number; // Hearts for continuing after game over
   
   // Game methods
   setScore: (score: number) => void;
@@ -49,6 +50,10 @@ interface GameContextType {
   isLevelUnlocked: (levelNum: number) => boolean;
   canUnlockLevel: (levelNum: number) => boolean;
   unlockLevel: (levelNum: number) => boolean;
+  addHeart: () => void;
+  useHeart: () => boolean;
+  hasHearts: () => boolean;
+  buyHearts: (count: number, cost: number) => boolean;
   
   // Power-up methods
   isPowerUpActive: (type: PowerUpType) => boolean;
@@ -82,6 +87,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [rewardPoints, setRewardPoints] = useState(0); // Reward points for unlocking levels
   const [fruitsEaten, setFruitsEaten] = useState(0); // Count of fruits eaten
   const [unlockedLevels, setUnlockedLevels] = useState<Set<number>>(new Set([1])); // Level 1 always unlocked
+  const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
   
   // Get auth context
   const { isAuthenticated } = useAuth();
@@ -237,6 +243,35 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     return false;
   }, [rewardPoints, unlockedLevels]);
   
+  // Add a heart
+  const addHeart = useCallback(() => {
+    setHearts(prev => prev + 1);
+  }, []);
+  
+  // Use a heart to continue playing
+  const useHeart = useCallback(() => {
+    if (hearts > 0) {
+      setHearts(prev => prev - 1);
+      return true;
+    }
+    return false;
+  }, [hearts]);
+  
+  // Check if player has hearts
+  const hasHearts = useCallback(() => {
+    return hearts > 0;
+  }, [hearts]);
+  
+  // Buy hearts with reward points (gems)
+  const buyHearts = useCallback((count: number, cost: number) => {
+    if (rewardPoints >= cost) {
+      setRewardPoints(prev => prev - cost);
+      setHearts(prev => prev + count);
+      return true;
+    }
+    return false;
+  }, [rewardPoints]);
+  
   const toggleControls = useCallback(() => {
     setShowControls(prev => !prev);
   }, []);
@@ -266,6 +301,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     gameStartTime,
     rewardPoints,
     fruitsEaten,
+    hearts,
     
     // Methods
     setScore,
@@ -284,12 +320,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     isLevelUnlocked,
     canUnlockLevel,
     unlockLevel,
-    
-    // Power-up methods
-    isPowerUpActive,
-    activatePowerUp,
-    getPowerUpSpeedFactor,
-    getActivePowerUps,
+    addHeart,
+    useHeart,
+    hasHearts,
+    buyHearts,
     
     // Power-up methods
     isPowerUpActive,

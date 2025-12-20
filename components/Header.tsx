@@ -11,6 +11,7 @@ interface HeaderProps {
   onAuthPress: () => void;
   onProfilePress: () => void;
   onLeaderboardPress: () => void;
+  onShopPress: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -18,10 +19,11 @@ const Header: React.FC<HeaderProps> = ({
   onLevelPress,
   onAuthPress, 
   onProfilePress, 
-  onLeaderboardPress 
+  onLeaderboardPress,
+  onShopPress
 }) => {
   // Get game state from context
-  const { score, highScore, mode, level, gameStarted, gameOver, isPaused, togglePause, endGame, rewardPoints } = useGame();
+  const { score, highScore, mode, level, gameStarted, gameOver, isPaused, togglePause, endGame, rewardPoints, hearts } = useGame();
   const { isAuthenticated, user } = useAuth();
   
   // Determine if mode can be changed (only when game is not active)
@@ -83,6 +85,7 @@ const Header: React.FC<HeaderProps> = ({
           <View style={styles.scoreDisplay}>
             <Text style={styles.currentScoreText}>Score: {score}</Text>
             <Text style={styles.gemDisplay}>💎 {rewardPoints}</Text>
+            <Text style={styles.heartDisplay}>❤️ {hearts}</Text>
           </View>
         </View>
         
@@ -101,6 +104,7 @@ const Header: React.FC<HeaderProps> = ({
           <Text style={styles.scoreText}>Score: {score}</Text>
           <Text style={styles.scoreText}>High Score: {highScore}</Text>
           <Text style={styles.rewardPointsText}>💎 {rewardPoints}</Text>
+          <Text style={styles.heartText}>❤️ {hearts}</Text>
           {isAuthenticated && user && (
             <Text style={styles.userText}>Welcome, {user.first_name}!</Text>
           )}
@@ -150,6 +154,12 @@ const Header: React.FC<HeaderProps> = ({
           
           {/* Authentication and user buttons */}
           <View style={styles.authContainer}>
+            <TouchableOpacity 
+              style={[styles.iconButton, styles.shopButton]} 
+              onPress={onShopPress}
+            >
+              <Text style={styles.iconButtonText}>🛒</Text>
+            </TouchableOpacity>
             {isAuthenticated ? (
               <>
                 <TouchableOpacity 
@@ -244,6 +254,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 4,
   },
+  heartDisplay: {
+    fontSize: 16,
+    color: "#FF1744", // Red color for hearts
+    fontWeight: "bold",
+    marginTop: 4,
+  },
   scoreContainer: {
     flex: 1,
   },
@@ -255,6 +271,12 @@ const styles = StyleSheet.create({
   rewardPointsText: {
     fontSize: 16,
     color: "#FFD700", // Gold color for reward points
+    fontWeight: "bold",
+    marginTop: 4,
+  },
+  heartText: {
+    fontSize: 16,
+    color: "#FF1744", // Red color for hearts
     fontWeight: "bold",
     marginTop: 4,
   },
@@ -304,6 +326,10 @@ const styles = StyleSheet.create({
   },
   iconButtonText: {
     fontSize: 16,
+  },
+  shopButton: {
+    backgroundColor: "#FF1744", // Red theme for shop
+    borderColor: "#C62828",
   },
   authButton: {
     backgroundColor: "#9C27B0", // Purple theme for auth button

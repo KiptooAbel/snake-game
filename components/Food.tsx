@@ -12,7 +12,7 @@ type Position = {
 // Define all food types
 type FoodType = 'REGULAR' | 'GOLDEN' | 'SPEED_BOOST' | 'SPEED_SLOW' | 
                 'DOUBLE_POINTS' | 'INVINCIBILITY' | 'GHOST_MODE' |
-                'RUBY' | 'EMERALD' | 'DIAMOND'; // Added reward fruits
+                'RUBY' | 'EMERALD' | 'DIAMOND' | 'HEART'; // Added reward fruits and heart
 
 // Add TypeScript annotations
 interface FoodProps {
@@ -116,6 +116,15 @@ export default function Food({
           pulseScale: 1.7,
           rotationDuration: 800,
           symbol: "💎",
+        };
+      case 'HEART':
+        return {
+          color: "#FF1744", // Bright red for heart
+          secondaryColor: "#C62828", // Darker red
+          pulseDuration: 350,
+          pulseScale: 1.5,
+          rotationDuration: 1200,
+          symbol: "❤️",
         };
       default: // REGULAR
         return {
