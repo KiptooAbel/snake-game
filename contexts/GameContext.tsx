@@ -29,6 +29,8 @@ interface GameContextType {
   gameStarted: boolean;
   showControls: boolean;
   gameStartTime: number | null;
+  rewardPoints: number; // Points earned from special fruits to unlock levels
+  fruitsEaten: number; // Track how many fruits eaten to trigger special fruits
   
   // Game methods
   setScore: (score: number) => void;
@@ -42,6 +44,11 @@ interface GameContextType {
   toggleControls: () => void;
   handleDirectionChange: (direction: Position) => void;
   submitScore: () => Promise<void>;
+  addRewardPoints: (points: number) => void;
+  incrementFruitsEaten: () => void;
+  isLevelUnlocked: (levelNum: number) => boolean;
+  canUnlockLevel: (levelNum: number) => boolean;
+  unlockLevel: (levelNum: number) => boolean;
   
   // Power-up methods
   isPowerUpActive: (type: PowerUpType) => boolean;
@@ -72,6 +79,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [gameStarted, setGameStarted] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+  const [rewardPoints, setRewardPoints] = useState(0); // Reward points for unlocking levels
+  const [fruitsEaten, setFruitsEaten] = useState(0); // Count of fruits eaten
+  const [unlockedLevels, setUnlockedLevels] = useState<Set<number>>(new Set([1])); // Level 1 always unlocked
   
   // Get auth context
   const { isAuthenticated } = useAuth();
@@ -185,12 +195,47 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   const restartGame = useCallback(() => {
     setScore(0);
+    setFruitsEaten(0); // Reset fruits eaten on restart
     setGameOver(false);
     setIsPaused(false);
     setGameStarted(true);
     setGameStartTime(Date.now());
     // Don't clear obstacles here - let GameBoard handle it
   }, []);
+  
+  // Add reward points (from special fruits)
+  const addRewardPoints = useCallback((points: number) => {
+    setRewardPoints(prev => prev + points);
+  }, []);
+  
+  // Increment fruits eaten counter
+  const incrementFruitsEaten = useCallback(() => {
+    setFruitsEaten(prev => prev + 1);
+  }, []);
+  
+  // Check if a level is unlocked (has been purchased)
+  const isLevelUnlocked = useCallback((levelNum: number) => {
+    return unlockedLevels.has(levelNum);
+  }, [unlockedLevels]);
+  
+  // Check if player can afford to unlock a level
+  const canUnlockLevel = useCallback((levelNum: number) => {
+    if (unlockedLevels.has(levelNum)) return false; // Already unlocked
+    if (levelNum === 2) return rewardPoints >= 50;
+    if (levelNum === 3) return rewardPoints >= 150;
+    return false;
+  }, [rewardPoints, unlockedLevels]);
+  
+  // Unlock a level by spending gems
+  const unlockLevel = useCallback((levelNum: number) => {
+    const cost = levelNum === 2 ? 50 : levelNum === 3 ? 150 : 0;
+    if (cost > 0 && rewardPoints >= cost && !unlockedLevels.has(levelNum)) {
+      setRewardPoints(prev => prev - cost);
+      setUnlockedLevels(prev => new Set([...prev, levelNum]));
+      return true;
+    }
+    return false;
+  }, [rewardPoints, unlockedLevels]);
   
   const toggleControls = useCallback(() => {
     setShowControls(prev => !prev);
@@ -219,6 +264,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     gameStarted,
     showControls,
     gameStartTime,
+    rewardPoints,
+    fruitsEaten,
     
     // Methods
     setScore,
@@ -232,6 +279,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     toggleControls,
     handleDirectionChange,
     submitScore,
+    addRewardPoints,
+    incrementFruitsEaten,
+    isLevelUnlocked,
+    canUnlockLevel,
+    unlockLevel,
+    
+    // Power-up methods
+    isPowerUpActive,
+    activatePowerUp,
+    getPowerUpSpeedFactor,
+    getActivePowerUps,
     
     // Power-up methods
     isPowerUpActive,

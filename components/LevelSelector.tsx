@@ -40,44 +40,91 @@ export default function LevelSelector({
   onClose
 }: LevelSelectorProps) {
   // Get game state and methods from context
-  const { level, setLevel } = useGame();
+  const { level, setLevel, rewardPoints, isLevelUnlocked, canUnlockLevel, unlockLevel } = useGame();
   
   console.log('LevelSelector rendered with current level:', level);
   
   // Handle level selection
   const handleSelectLevel = (newLevel: number) => {
     console.log('Level selected:', newLevel);
+    
+    // Check if level is unlocked
+    if (!isLevelUnlocked(newLevel)) {
+      console.log('Level is locked');
+      return; // Don't allow selecting locked levels
+    }
+    
     setLevel(newLevel);
     onClose();
+  };
+  
+  // Handle unlocking a level
+  const handleUnlockLevel = (levelNum: number) => {
+    console.log('Attempting to unlock level:', levelNum);
+    const success = unlockLevel(levelNum);
+    if (success) {
+      console.log('Level unlocked successfully');
+      setLevel(levelNum);
+      onClose();
+    }
   };
   
   // Render a level option button
   const renderLevelOption = (levelOption: keyof typeof levelInfo) => {
     const isSelected = levelOption === level;
+    const isUnlocked = isLevelUnlocked(levelOption);
+    const canUnlock = canUnlockLevel(levelOption);
     const { name, color, description } = levelInfo[levelOption];
     
-    console.log(`Rendering level option: ${levelOption}, isSelected: ${isSelected}, currentLevel: ${level}`);
+    // Determine reward points required for each level
+    const rewardPointsRequired = levelOption === 1 ? 0 : levelOption === 2 ? 50 : 150;
+    
+    console.log(`Rendering level option: ${levelOption}, isSelected: ${isSelected}, currentLevel: ${level}, isUnlocked: ${isUnlocked}, canUnlock: ${canUnlock}`);
     
     return (
       <TouchableOpacity
         key={levelOption}
         style={[
           styles.levelOption,
-          isSelected && styles.selectedOption
+          isSelected && styles.selectedOption,
+          !isUnlocked && !canUnlock && styles.lockedOption
         ]}
-        onPress={() => handleSelectLevel(levelOption)}
-        activeOpacity={0.8}
+        onPress={() => {
+          if (isUnlocked) {
+            handleSelectLevel(levelOption);
+          } else if (canUnlock) {
+            handleUnlockLevel(levelOption);
+          }
+        }}
+        activeOpacity={isUnlocked || canUnlock ? 0.8 : 1}
+        disabled={!isUnlocked && !canUnlock}
       >
         <LinearGradient
-          colors={color as [string, string]}
+          colors={isUnlocked ? color as [string, string] : canUnlock ? ["#FFD700", "#FFA000"] : ["#424242", "#212121"]}
           style={styles.gradientBackground}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         >
-          <Text style={styles.levelText}>{name}</Text>
-          <Text style={styles.descriptionText}>{description}</Text>
+          <Text style={[styles.levelText, !isUnlocked && !canUnlock && styles.lockedText]}>
+            {name} {!isUnlocked && (canUnlock ? "💎" : "🔒")}
+          </Text>
+          <Text style={[styles.descriptionText, !isUnlocked && !canUnlock && styles.lockedText]}>
+            {description}
+          </Text>
           
-          {isSelected && (
+          {!isUnlocked && canUnlock && (
+            <Text style={styles.unlockButtonText}>
+              TAP TO UNLOCK - {rewardPointsRequired} 💎
+            </Text>
+          )}
+          
+          {!isUnlocked && !canUnlock && (
+            <Text style={styles.unlockText}>
+              Requires {rewardPointsRequired} gems
+            </Text>
+          )}
+          
+          {isSelected && isUnlocked && (
             <View style={styles.selectedIndicator} />
           )}
         </LinearGradient>
@@ -99,21 +146,29 @@ export default function LevelSelector({
             </View>
             
             <View style={styles.levelDetails}>
-              <Text style={styles.detailsTitle}>LEVEL DETAILS</Text>
+              <Text style={styles.detailsTitle}>YOUR GEMS: 💎 {rewardPoints}</Text>
+              <Text style={styles.detailsSubtitle}>Eat special fruits to earn gems!</Text>
               
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>LEVEL 1:</Text>
-                <Text style={styles.detailText}>Classic snake with wrapping walls</Text>
+                <Text style={styles.detailText}>Free (Always unlocked)</Text>
               </View>
               
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>LEVEL 2:</Text>
-                <Text style={styles.detailText}>Walled arena - avoid the boundaries!</Text>
+                <Text style={styles.detailText}>Cost: 50 gems</Text>
               </View>
               
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>LEVEL 3:</Text>
-                <Text style={styles.detailText}>L-shaped corners & horizontal barriers</Text>
+                <Text style={styles.detailText}>Cost: 150 gems</Text>
+              </View>
+              
+              <View style={styles.rewardInfo}>
+                <Text style={styles.rewardInfoTitle}>Special Fruits:</Text>
+                <Text style={styles.rewardInfoText}>💎 Ruby (15th fruit): +10 gems</Text>
+                <Text style={styles.rewardInfoText}>💎 Emerald (30th fruit): +25 gems</Text>
+                <Text style={styles.rewardInfoText}>💎 Diamond (50th fruit): +50 gems</Text>
               </View>
             </View>
             
@@ -175,6 +230,17 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderRadius: 10,
     overflow: 'hidden',
+  unlockButtonText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginTop: 8,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+  },
     borderWidth: 2,
     borderColor: 'transparent',
     minHeight: 60,
@@ -186,6 +252,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.7,
     shadowRadius: 8,
     elevation: 10,
+  },
+  lockedOption: {
+    opacity: 0.6,
+  },
+  lockedText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+  unlockText: {
+    fontSize: 12,
+    color: '#FFD700',
+    marginTop: 5,
+    fontStyle: 'italic',
   },
   gradientBackground: {
     padding: 15,
@@ -224,9 +302,34 @@ const styles = StyleSheet.create({
   detailsTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#8B4513',
-    marginBottom: 10,
+    color: '#FFD700',
+    marginBottom: 5,
     textAlign: 'center',
+  },
+  detailsSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 15,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  rewardInfo: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(139, 69, 19, 0.3)',
+  },
+  rewardInfoTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#8B4513',
+    marginBottom: 8,
+  },
+  rewardInfoText: {
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 4,
+    paddingLeft: 10,
   },
   detailRow: {
     flexDirection: 'row',

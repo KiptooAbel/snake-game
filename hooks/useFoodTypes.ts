@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 // Food types and their properties
 const FOOD_TYPES = {
   REGULAR: { 
-    points: 1, 
+    points: 5, 
     probability: { EASY: 0.60, NORMAL: 0.70, HARD: 0.80 },
     powerUpEffect: null,
     duration: 0
@@ -46,6 +46,28 @@ const FOOD_TYPES = {
     probability: { EASY: 0.03, NORMAL: 0.03, HARD: 0.02 },
     powerUpEffect: "GHOST_MODE",
     duration: 8000 // 8 seconds
+  },
+  // Special Reward Fruits (appear after eating certain number of regular fruits)
+  RUBY: {
+    points: 5, // Regular score points
+    rewardPoints: 10, // Special reward points for unlocking levels
+    probability: { EASY: 0, NORMAL: 0, HARD: 0 }, // Not spawned randomly
+    powerUpEffect: null,
+    duration: 0
+  },
+  EMERALD: {
+    points: 10,
+    rewardPoints: 25,
+    probability: { EASY: 0, NORMAL: 0, HARD: 0 },
+    powerUpEffect: null,
+    duration: 0
+  },
+  DIAMOND: {
+    points: 20,
+    rewardPoints: 50,
+    probability: { EASY: 0, NORMAL: 0, HARD: 0 },
+    powerUpEffect: null,
+    duration: 0
   }
 };
 

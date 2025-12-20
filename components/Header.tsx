@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
   onLeaderboardPress 
 }) => {
   // Get game state from context
-  const { score, highScore, mode, level, gameStarted, gameOver, isPaused, togglePause, endGame } = useGame();
+  const { score, highScore, mode, level, gameStarted, gameOver, isPaused, togglePause, endGame, rewardPoints } = useGame();
   const { isAuthenticated, user } = useAuth();
   
   // Determine if mode can be changed (only when game is not active)
@@ -82,6 +82,7 @@ const Header: React.FC<HeaderProps> = ({
           
           <View style={styles.scoreDisplay}>
             <Text style={styles.currentScoreText}>Score: {score}</Text>
+            <Text style={styles.gemDisplay}>💎 {rewardPoints}</Text>
           </View>
         </View>
         
@@ -99,6 +100,7 @@ const Header: React.FC<HeaderProps> = ({
         <View style={styles.scoreContainer}>
           <Text style={styles.scoreText}>Score: {score}</Text>
           <Text style={styles.scoreText}>High Score: {highScore}</Text>
+          <Text style={styles.rewardPointsText}>💎 {rewardPoints}</Text>
           {isAuthenticated && user && (
             <Text style={styles.userText}>Welcome, {user.first_name}!</Text>
           )}
@@ -236,6 +238,12 @@ const styles = StyleSheet.create({
     color: "white", // Changed from green to white to match other screens
     fontWeight: "bold",
   },
+  gemDisplay: {
+    fontSize: 16,
+    color: "#FFD700", // Gold color
+    fontWeight: "bold",
+    marginTop: 4,
+  },
   scoreContainer: {
     flex: 1,
   },
@@ -243,6 +251,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "white", // White text for dark background
     fontWeight: "bold",
+  },
+  rewardPointsText: {
+    fontSize: 16,
+    color: "#FFD700", // Gold color for reward points
+    fontWeight: "bold",
+    marginTop: 4,
   },
   userText: {
     fontSize: 12,

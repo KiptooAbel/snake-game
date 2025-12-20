@@ -27,6 +27,10 @@ const GameBoard: React.FC = () => {
     endGame,
     restartGame,
     setDirectionChangeCallback,
+    rewardPoints,
+    fruitsEaten,
+    addRewardPoints,
+    incrementFruitsEaten,
     // Power-up related methods
     isPowerUpActive,
     activatePowerUp,
@@ -92,6 +96,24 @@ const GameBoard: React.FC = () => {
   // Generate food in a position not occupied by the snake or obstacles
   const generateFood = () => {
     return generateFoodForSnake(snake);
+  };
+  
+  // Determine next food type - spawn special reward fruits after certain number of regular fruits
+  const determineNextFoodType = () => {
+    // Every 15 fruits eaten, spawn a RUBY
+    if ((fruitsEaten + 1) % 15 === 0) {
+      return "RUBY";
+    }
+    // Every 30 fruits eaten, spawn an EMERALD
+    if ((fruitsEaten + 1) % 30 === 0) {
+      return "EMERALD";
+    }
+    // Every 50 fruits eaten, spawn a DIAMOND
+    if ((fruitsEaten + 1) % 50 === 0) {
+      return "DIAMOND";
+    }
+    // Otherwise, generate a random food type (power-ups, golden, or regular)
+    return generateFoodType();
   };
 
   // Set up initial food position
@@ -295,12 +317,23 @@ const GameBoard: React.FC = () => {
         setScore(newScore);
         setLastScore(newScore);
         
+        // Add reward points if this is a special reward fruit
+        if ((foodProps as any).rewardPoints) {
+          addRewardPoints((foodProps as any).rewardPoints);
+        }
+        
+        // Increment fruits eaten counter (for tracking when to spawn special fruits)
+        incrementFruitsEaten();
+        
         // Check if we should add a new obstacle - REMOVED (no obstacles)
         // No obstacle logic needed
         
         const newFood = generateFoodForSnake(newSnake);
         setFood(newFood);
-        setFoodType(generateFoodType());
+        
+        // Determine next food type - check if we should spawn a special reward fruit
+        const nextFoodType = determineNextFoodType();
+        setFoodType(nextFoodType);
       } else {
         newSnake.pop();
       }
