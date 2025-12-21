@@ -12,8 +12,12 @@ REM Set JAVA_HOME to Android Studio's bundled JDK (most compatible)
 if exist "C:\Program Files\Android\Android Studio\jbr" (
     set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
     echo Using Android Studio's JDK: %JAVA_HOME%
+) else if exist "C:\Program Files\Android Studio\jbr" (
+    set "JAVA_HOME=C:\Program Files\Android Studio\jbr"
+    echo Using Android Studio's JDK: %JAVA_HOME%
 ) else (
     echo Warning: Android Studio JDK not found, using system Java
+    where java
 )
 
 REM Set ANDROID_HOME to the common location
