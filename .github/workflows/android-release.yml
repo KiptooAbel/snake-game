@@ -34,13 +34,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify babel-plugin-module-resolver installation
-        run: |
-          echo "Checking if babel-plugin-module-resolver is installed..."
-          ls -la node_modules/ | grep babel-plugin-module-resolver || echo "NOT FOUND in node_modules root"
-          npm list babel-plugin-module-resolver || echo "NOT in npm list"
-          cat package.json | grep babel-plugin-module-resolver || echo "NOT in package.json"
-
       - name: Install Expo CLI
         run: npm install -g expo-cli
 
