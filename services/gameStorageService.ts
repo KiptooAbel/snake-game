@@ -57,7 +57,7 @@ class GameStorageService {
       await AsyncStorage.setItem(STORAGE_KEYS.GEMS, gems.toString());
     } catch (error) {
       console.error('Error saving gems:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 
@@ -69,7 +69,7 @@ class GameStorageService {
       await AsyncStorage.setItem(STORAGE_KEYS.HEARTS, hearts.toString());
     } catch (error) {
       console.error('Error saving hearts:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 
@@ -81,7 +81,7 @@ class GameStorageService {
       await AsyncStorage.setItem(STORAGE_KEYS.UNLOCKED_LEVELS, JSON.stringify(levels));
     } catch (error) {
       console.error('Error saving unlocked levels:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 
@@ -93,7 +93,7 @@ class GameStorageService {
       await AsyncStorage.setItem(STORAGE_KEYS.HIGH_SCORE, score.toString());
     } catch (error) {
       console.error('Error saving high score:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 
@@ -120,7 +120,7 @@ class GameStorageService {
       await Promise.all(updates);
     } catch (error) {
       console.error('Error saving game data:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 
@@ -133,7 +133,7 @@ class GameStorageService {
       await AsyncStorage.setItem(STORAGE_KEYS.LAST_SYNC, now);
     } catch (error) {
       console.error('Error updating last sync:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 
@@ -151,7 +151,7 @@ class GameStorageService {
       ]);
     } catch (error) {
       console.error('Error clearing game data:', error);
-      throw error;
+      // Don't throw - continue silently
     }
   }
 

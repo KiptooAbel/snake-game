@@ -43,7 +43,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [onSyncGameData, setOnSyncGameData] = useState<(() => Promise<void>) | undefined>();
 
   useEffect(() => {
-    checkAuthState();
+    // Small delay to ensure AsyncStorage is ready, especially on app restarts
+    const timer = setTimeout(() => {
+      checkAuthState();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const checkAuthState = async () => {
@@ -51,8 +56,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Wait for token to be loaded from storage
       const isAuth = await apiService.isAuthenticatedAsync();
       if (isAuth) {
-        const userData = await apiService.getProfile();
-        setUser(userData);
+        try {
+          const userData = await apiService.getProfile();
+          setUser(userData);
+        } catch (profileError) {
+          console.error('Failed to get profile:', profileError);
+          // Profile fetch failed, clear token
+          await apiService.logout();
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -61,6 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await apiService.logout();
       } catch (logoutError) {
         console.error('Logout during auth check failed:', logoutError);
+        // Ignore logout errors
       }
     } finally {
       setIsLoading(false);

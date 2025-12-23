@@ -42,7 +42,10 @@ class ApiService {
   private tokenLoaded: Promise<void>;
 
   constructor() {
-    this.tokenLoaded = this.loadToken();
+    this.tokenLoaded = this.loadToken().catch(err => {
+      console.error('Failed to load token during initialization:', err);
+      // Don't throw, just continue without token
+    });
   }
 
   private async loadToken(): Promise<void> {
@@ -55,6 +58,7 @@ class ApiService {
       this.token = await AsyncStorage.getItem('auth_token');
     } catch (error) {
       console.error('Error loading token:', error);
+      // Don't throw, just continue without token
     }
   }
 

@@ -89,15 +89,26 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
   const [isStorageLoaded, setIsStorageLoaded] = useState(false);
   
-  // Get auth context
-  const { isAuthenticated, setOnSyncGameData } = useAuth();
+  // Get auth context with safety check
+  const authContext = useAuth();
+  const { isAuthenticated, setOnSyncGameData } = authContext || { isAuthenticated: false, setOnSyncGameData: () => {} };
   
   // Create a ref for sync in progress
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Load game data from local storage on mount
   useEffect(() => {
-    loadGameData();
+    const initializeGameData = async () => {
+      try {
+        await loadGameData();
+      } catch (error) {
+        console.error('Failed to initialize game data:', error);
+        // Set storage loaded anyway to prevent blocking
+        setIsStorageLoaded(true);
+      }
+    };
+    
+    initializeGameData();
     
     // Cleanup timeout on unmount
     return () => {
@@ -179,12 +190,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Save gems to local storage whenever they change
   useEffect(() => {
     if (isStorageLoaded) {
-      gameStorageService.saveGems(rewardPoints);
-      console.log('💎 Saved gems to storage:', rewardPoints);
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
+      try {
+        gameStorageService.saveGems(rewardPoints);
+        console.log('💎 Saved gems to storage:', rewardPoints);
+        
+        // If authenticated, debounce sync to server
+        if (isAuthenticated) {
+          debouncedSync();
+        }
+      } catch (error) {
+        console.error('Failed to save gems:', error);
       }
     }
   }, [rewardPoints, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
@@ -192,12 +207,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Save hearts to local storage whenever they change
   useEffect(() => {
     if (isStorageLoaded) {
-      gameStorageService.saveHearts(hearts);
-      console.log('❤️ Saved hearts to storage:', hearts);
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
+      try {
+        gameStorageService.saveHearts(hearts);
+        console.log('❤️ Saved hearts to storage:', hearts);
+        
+        // If authenticated, debounce sync to server
+        if (isAuthenticated) {
+          debouncedSync();
+        }
+      } catch (error) {
+        console.error('Failed to save hearts:', error);
       }
     }
   }, [hearts, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
@@ -205,13 +224,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Save unlocked levels to local storage whenever they change
   useEffect(() => {
     if (isStorageLoaded) {
-      const levelsArray = Array.from(unlockedLevels);
-      gameStorageService.saveUnlockedLevels(levelsArray);
-      console.log('🔓 Saved unlocked levels to storage:', levelsArray);
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
+      try {
+        const levelsArray = Array.from(unlockedLevels);
+        gameStorageService.saveUnlockedLevels(levelsArray);
+        console.log('🔓 Saved unlocked levels to storage:', levelsArray);
+        
+        // If authenticated, debounce sync to server
+        if (isAuthenticated) {
+          debouncedSync();
+        }
+      } catch (error) {
+        console.error('Failed to save unlocked levels:', error);
       }
     }
   }, [unlockedLevels, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
@@ -219,12 +242,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Save high score to local storage whenever it changes
   useEffect(() => {
     if (isStorageLoaded) {
-      gameStorageService.saveHighScore(highScore);
-      console.log('🏆 Saved high score to storage:', highScore);
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
+      try {
+        gameStorageService.saveHighScore(highScore);
+        console.log('🏆 Saved high score to storage:', highScore);
+        
+        // If authenticated, debounce sync to server
+        if (isAuthenticated) {
+          debouncedSync();
+        }
+      } catch (error) {
+        console.error('Failed to save high score:', error);
       }
     }
   }, [highScore, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
@@ -455,7 +482,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   // Register sync callback with AuthContext only once
   useEffect(() => {
-    setOnSyncGameData(syncGameData);
+    // Only register if setOnSyncGameData is available
+    if (setOnSyncGameData && typeof setOnSyncGameData === 'function') {
+      try {
+        setOnSyncGameData(syncGameData);
+      } catch (error) {
+        console.error('Failed to register sync callback:', error);
+      }
+    }
   }, [setOnSyncGameData]); // Only depend on setOnSyncGameData, not syncGameData itself
   
   const toggleControls = useCallback(() => {
