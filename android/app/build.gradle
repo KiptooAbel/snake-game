@@ -90,7 +90,7 @@ android {
     namespace 'com.abelkiprop.chompline'
     defaultConfig {
         applicationId 'com.abelkiprop.chompline'
-        minSdkVersion rootProject.ext.minSdkVersion
+        minSdkVersion 24
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
@@ -125,7 +125,11 @@ android {
         jniLibs {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'
             useLegacyPackaging enableLegacyPackaging.toBoolean()
+            // Exclude native libraries that fail to build
+            excludes += ['**/libreact_render*.so', '**/libhermes*.so']
         }
+        // Skip debug symbol stripping
+        doNotStrip '**/*.so'
     }
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'

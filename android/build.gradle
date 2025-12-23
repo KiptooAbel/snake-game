@@ -18,14 +18,18 @@ allprojects {
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
-}
-
-ext {
-    minSdkVersion = 24
-    compileSdkVersion = 35
-    targetSdkVersion = 35
-    ndkVersion = "28.0.12674087"
-    buildToolsVersion = "35.0.0"
+  
+  // Disable CMake builds for all projects to avoid minSdk issues
+  afterEvaluate { project ->
+    if (project.hasProperty('android')) {
+      project.android {
+        // Skip CMake configuration that causes minSdk errors
+        if (project.android.hasProperty('externalNativeBuild')) {
+          project.android.externalNativeBuild.cmake.path = null
+        }
+      }
+    }
+  }
 }
 
 apply plugin: "expo-root-project"
