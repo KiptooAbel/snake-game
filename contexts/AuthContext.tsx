@@ -40,7 +40,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [onSyncGameData, setOnSyncGameData] = useState<(() => Promise<void>) | undefined>(undefined);
+  const [onSyncGameData, setOnSyncGameData] = useState<(() => Promise<void>) | undefined>();
 
   useEffect(() => {
     checkAuthState();
@@ -57,7 +57,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Auth check failed:', error);
       // Token might be expired, clear it
-      await apiService.logout();
+      try {
+        await apiService.logout();
+      } catch (logoutError) {
+        console.error('Logout during auth check failed:', logoutError);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +76,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Trigger game data sync after successful login
       if (onSyncGameData) {
         console.log('🔄 Triggering game data sync after login');
-        await onSyncGameData();
+        try {
+          await onSyncGameData();
+        } catch (syncError) {
+          console.error('Game data sync failed after login:', syncError);
+          // Don't throw - login was successful even if sync failed
+        }
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -91,7 +100,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Trigger game data sync after successful registration
       if (onSyncGameData) {
         console.log('🔄 Triggering game data sync after registration');
-        await onSyncGameData();
+        try {
+          await onSyncGameData();
+        } catch (syncError) {
+          console.error('Game data sync failed after registration:', syncError);
+          // Don't throw - registration was successful even if sync failed
+        }
       }
     } catch (error) {
       console.error('Registration failed:', error);

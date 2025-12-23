@@ -98,6 +98,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Load game data from local storage on mount
   useEffect(() => {
     loadGameData();
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
   }, []);
   
   // Load game data from local storage
@@ -117,7 +124,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }
   };
   
-  // Debounced sync to server
+  // Debounced sync to server - use ref to avoid recreating
   const debouncedSync = useCallback(() => {
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
@@ -129,34 +136,36 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       try {
         console.log('🔄 Syncing game data with server...');
         
-        // Get current local data
-        const localData = {
-          gems: rewardPoints,
-          hearts: hearts,
-          unlocked_levels: Array.from(unlockedLevels),
-          high_score: highScore,
-        };
+        // Get current local data from storage to ensure we have the latest
+        const localData = await gameStorageService.getGameData();
         
         console.log('📤 Sending local data to server:', localData);
         
-        const response = await apiService.syncGameData(localData);
+        const serverData = {
+          gems: localData.gems,
+          hearts: localData.hearts,
+          unlocked_levels: localData.unlockedLevels,
+          high_score: localData.highScore,
+        };
+        
+        const response = await apiService.syncGameData(serverData);
         
         console.log('📥 Received server data:', response);
         
         // Merge server data with local data (take the maximum values)
-        const mergedGems = Math.max(rewardPoints, response.gems || 0);
-        const mergedHearts = Math.max(hearts, response.hearts || 0);
-        const mergedHighScore = Math.max(highScore, response.high_score || 0);
+        const mergedGems = Math.max(localData.gems, response.gems || 0);
+        const mergedHearts = Math.max(localData.hearts, response.hearts || 0);
+        const mergedHighScore = Math.max(localData.highScore, response.high_score || 0);
         
         // Merge unlocked levels (union of both sets)
         const serverLevels = new Set(response.unlocked_levels || [1]);
-        const mergedLevels = new Set([...Array.from(unlockedLevels), ...Array.from(serverLevels)]);
+        const mergedLevels = new Set([...localData.unlockedLevels, ...Array.from(serverLevels)]);
         
-        // Only update if values changed
-        if (mergedGems !== rewardPoints) setRewardPoints(mergedGems);
-        if (mergedHearts !== hearts) setHearts(mergedHearts);
-        if (mergedHighScore !== highScore) setHighScore(mergedHighScore);
-        if (mergedLevels.size !== unlockedLevels.size) setUnlockedLevels(mergedLevels);
+        // Only update state if values changed
+        setRewardPoints(mergedGems);
+        setHearts(mergedHearts);
+        setHighScore(mergedHighScore);
+        setUnlockedLevels(mergedLevels);
         
         await gameStorageService.updateLastSync();
         
@@ -165,7 +174,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         console.error('❌ Failed to sync game data:', error);
       }
     }, 2000);
-  }, [isAuthenticated, rewardPoints, hearts, unlockedLevels, highScore]);
+  }, [isAuthenticated]); // Only depend on isAuthenticated
   
   // Save gems to local storage whenever they change
   useEffect(() => {
@@ -178,7 +187,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         debouncedSync();
       }
     }
-  }, [rewardPoints, isStorageLoaded, isAuthenticated, debouncedSync]);
+  }, [rewardPoints, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
   
   // Save hearts to local storage whenever they change
   useEffect(() => {
@@ -191,7 +200,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         debouncedSync();
       }
     }
-  }, [hearts, isStorageLoaded, isAuthenticated, debouncedSync]);
+  }, [hearts, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
   
   // Save unlocked levels to local storage whenever they change
   useEffect(() => {
@@ -205,7 +214,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         debouncedSync();
       }
     }
-  }, [unlockedLevels, isStorageLoaded, isAuthenticated, debouncedSync]);
+  }, [unlockedLevels, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
   
   // Save high score to local storage whenever it changes
   useEffect(() => {
@@ -218,7 +227,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         debouncedSync();
       }
     }
-  }, [highScore, isStorageLoaded, isAuthenticated, debouncedSync]);
+  }, [highScore, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
   
   // Get power-ups methods
   const { 
@@ -444,10 +453,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }
   }, [isAuthenticated, rewardPoints, hearts, unlockedLevels, highScore]);
   
-  // Register sync callback with AuthContext
+  // Register sync callback with AuthContext only once
   useEffect(() => {
     setOnSyncGameData(syncGameData);
-  }, [syncGameData, setOnSyncGameData]);
+  }, [setOnSyncGameData]); // Only depend on setOnSyncGameData, not syncGameData itself
   
   const toggleControls = useCallback(() => {
     setShowControls(prev => !prev);
