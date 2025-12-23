@@ -4,6 +4,7 @@ import { ObstacleType } from '@/components/Obstacle';
 import { usePowerUps, PowerUpType } from '@/hooks/usePowerUps';
 import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/services/apiService';
+import gameStorageService from '@/services/gameStorageService';
 
 // Define obstacle position type
 export interface Position {
@@ -52,6 +53,7 @@ interface GameContextType {
   useHeart: () => boolean;
   hasHearts: () => boolean;
   buyHearts: (count: number, cost: number) => boolean;
+  syncGameData: () => Promise<void>; // Sync local data with server
   
   // Power-up methods
   isPowerUpActive: (type: PowerUpType) => boolean;
@@ -85,9 +87,138 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [fruitsEaten, setFruitsEaten] = useState(0); // Count of fruits eaten
   const [unlockedLevels, setUnlockedLevels] = useState<Set<number>>(new Set([1])); // Level 1 always unlocked
   const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
+  const [isStorageLoaded, setIsStorageLoaded] = useState(false);
   
   // Get auth context
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, setOnSyncGameData } = useAuth();
+  
+  // Create a ref for sync in progress
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Load game data from local storage on mount
+  useEffect(() => {
+    loadGameData();
+  }, []);
+  
+  // Load game data from local storage
+  const loadGameData = async () => {
+    try {
+      const data = await gameStorageService.getGameData();
+      console.log('📦 Loaded game data from storage:', data);
+      
+      setRewardPoints(data.gems);
+      setHearts(data.hearts);
+      setUnlockedLevels(new Set(data.unlockedLevels));
+      setHighScore(data.highScore);
+      setIsStorageLoaded(true);
+    } catch (error) {
+      console.error('Failed to load game data:', error);
+      setIsStorageLoaded(true);
+    }
+  };
+  
+  // Debounced sync to server
+  const debouncedSync = useCallback(() => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    
+    syncTimeoutRef.current = setTimeout(async () => {
+      if (!isAuthenticated) return;
+      
+      try {
+        console.log('🔄 Syncing game data with server...');
+        
+        // Get current local data
+        const localData = {
+          gems: rewardPoints,
+          hearts: hearts,
+          unlocked_levels: Array.from(unlockedLevels),
+          high_score: highScore,
+        };
+        
+        console.log('📤 Sending local data to server:', localData);
+        
+        const response = await apiService.syncGameData(localData);
+        
+        console.log('📥 Received server data:', response);
+        
+        // Merge server data with local data (take the maximum values)
+        const mergedGems = Math.max(rewardPoints, response.gems || 0);
+        const mergedHearts = Math.max(hearts, response.hearts || 0);
+        const mergedHighScore = Math.max(highScore, response.high_score || 0);
+        
+        // Merge unlocked levels (union of both sets)
+        const serverLevels = new Set(response.unlocked_levels || [1]);
+        const mergedLevels = new Set([...Array.from(unlockedLevels), ...Array.from(serverLevels)]);
+        
+        // Only update if values changed
+        if (mergedGems !== rewardPoints) setRewardPoints(mergedGems);
+        if (mergedHearts !== hearts) setHearts(mergedHearts);
+        if (mergedHighScore !== highScore) setHighScore(mergedHighScore);
+        if (mergedLevels.size !== unlockedLevels.size) setUnlockedLevels(mergedLevels);
+        
+        await gameStorageService.updateLastSync();
+        
+        console.log('✅ Game data synced successfully');
+      } catch (error) {
+        console.error('❌ Failed to sync game data:', error);
+      }
+    }, 2000);
+  }, [isAuthenticated, rewardPoints, hearts, unlockedLevels, highScore]);
+  
+  // Save gems to local storage whenever they change
+  useEffect(() => {
+    if (isStorageLoaded) {
+      gameStorageService.saveGems(rewardPoints);
+      console.log('💎 Saved gems to storage:', rewardPoints);
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
+      }
+    }
+  }, [rewardPoints, isStorageLoaded, isAuthenticated, debouncedSync]);
+  
+  // Save hearts to local storage whenever they change
+  useEffect(() => {
+    if (isStorageLoaded) {
+      gameStorageService.saveHearts(hearts);
+      console.log('❤️ Saved hearts to storage:', hearts);
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
+      }
+    }
+  }, [hearts, isStorageLoaded, isAuthenticated, debouncedSync]);
+  
+  // Save unlocked levels to local storage whenever they change
+  useEffect(() => {
+    if (isStorageLoaded) {
+      const levelsArray = Array.from(unlockedLevels);
+      gameStorageService.saveUnlockedLevels(levelsArray);
+      console.log('🔓 Saved unlocked levels to storage:', levelsArray);
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
+      }
+    }
+  }, [unlockedLevels, isStorageLoaded, isAuthenticated, debouncedSync]);
+  
+  // Save high score to local storage whenever it changes
+  useEffect(() => {
+    if (isStorageLoaded) {
+      gameStorageService.saveHighScore(highScore);
+      console.log('🏆 Saved high score to storage:', highScore);
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
+      }
+    }
+  }, [highScore, isStorageLoaded, isAuthenticated, debouncedSync]);
   
   // Get power-ups methods
   const { 
@@ -259,6 +390,65 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     return false;
   }, [rewardPoints]);
   
+  // Sync game data with server (called on login or when authenticated)
+  const syncGameData = useCallback(async () => {
+    if (!isAuthenticated) {
+      console.log('🔄 Not authenticated, skipping sync');
+      return;
+    }
+    
+    try {
+      console.log('🔄 Syncing game data with server...');
+      
+      // Get current local data
+      const localData = {
+        gems: rewardPoints,
+        hearts: hearts,
+        unlocked_levels: Array.from(unlockedLevels),
+        high_score: highScore,
+      };
+      
+      console.log('📤 Sending local data to server:', localData);
+      
+      // Send data to server
+      const response = await apiService.syncGameData(localData);
+      
+      console.log('📥 Received server data:', response);
+      
+      // Merge server data with local data (take the maximum values)
+      const mergedGems = Math.max(rewardPoints, response.gems || 0);
+      const mergedHearts = Math.max(hearts, response.hearts || 0);
+      const mergedHighScore = Math.max(highScore, response.high_score || 0);
+      
+      // Merge unlocked levels (union of both sets)
+      const serverLevels = new Set(response.unlocked_levels || [1]);
+      const mergedLevels = new Set([...Array.from(unlockedLevels), ...Array.from(serverLevels)]);
+      
+      // Update state with merged data
+      setRewardPoints(mergedGems);
+      setHearts(mergedHearts);
+      setHighScore(mergedHighScore);
+      setUnlockedLevels(mergedLevels);
+      
+      // Update last sync timestamp
+      await gameStorageService.updateLastSync();
+      
+      console.log('✅ Game data synced successfully');
+      console.log('   - Gems:', mergedGems);
+      console.log('   - Hearts:', mergedHearts);
+      console.log('   - High Score:', mergedHighScore);
+      console.log('   - Unlocked Levels:', Array.from(mergedLevels));
+    } catch (error) {
+      console.error('❌ Failed to sync game data:', error);
+      // Don't throw error, just log it - we can continue with local data
+    }
+  }, [isAuthenticated, rewardPoints, hearts, unlockedLevels, highScore]);
+  
+  // Register sync callback with AuthContext
+  useEffect(() => {
+    setOnSyncGameData(syncGameData);
+  }, [syncGameData, setOnSyncGameData]);
+  
   const toggleControls = useCallback(() => {
     setShowControls(prev => !prev);
   }, []);
@@ -309,6 +499,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     useHeart,
     hasHearts,
     buyHearts,
+    syncGameData,
     
     // Power-up methods
     isPowerUpActive,

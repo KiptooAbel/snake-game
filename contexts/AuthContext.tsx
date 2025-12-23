@@ -10,6 +10,8 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  onSyncGameData?: () => Promise<void>; // Callback for game data sync
+  setOnSyncGameData: (callback: () => Promise<void>) => void;
 }
 
 interface RegisterData {
@@ -38,6 +40,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [onSyncGameData, setOnSyncGameData] = useState<(() => Promise<void>) | undefined>(undefined);
 
   useEffect(() => {
     checkAuthState();
@@ -65,6 +68,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const { user: userData } = await apiService.login(email, password);
       setUser(userData);
+      
+      // Trigger game data sync after successful login
+      if (onSyncGameData) {
+        console.log('🔄 Triggering game data sync after login');
+        await onSyncGameData();
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -78,6 +87,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const { user: newUser } = await apiService.register(userData);
       setUser(newUser);
+      
+      // Trigger game data sync after successful registration
+      if (onSyncGameData) {
+        console.log('🔄 Triggering game data sync after registration');
+        await onSyncGameData();
+      }
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
@@ -118,6 +133,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     updateUser,
+    onSyncGameData,
+    setOnSyncGameData: (callback: () => Promise<void>) => setOnSyncGameData(() => callback),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -261,6 +261,33 @@ class ApiService {
     return this.request('/leaderboard/monthly');
   }
 
+  // Game data sync methods
+  async syncGameData(gameData: {
+    gems: number;
+    hearts: number;
+    unlocked_levels: number[];
+    high_score: number;
+  }): Promise<{
+    gems: number;
+    hearts: number;
+    unlocked_levels: number[];
+    high_score: number;
+  }> {
+    return this.request('/game/sync', {
+      method: 'POST',
+      body: JSON.stringify(gameData),
+    });
+  }
+
+  async getGameData(): Promise<{
+    gems: number;
+    hearts: number;
+    unlocked_levels: number[];
+    high_score: number;
+  }> {
+    return this.request('/game/data');
+  }
+
   // Utility methods
   async isAuthenticatedAsync(): Promise<boolean> {
     await this.tokenLoaded;
