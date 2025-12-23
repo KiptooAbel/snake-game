@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js (REQUIRED for Expo SDK)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -37,6 +37,9 @@ jobs:
 
       - name: Prebuild Android
         run: npx expo prebuild --platform android --no-install
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
 
       - name: Build Android Release APK
         run: |
