@@ -21,17 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: package-lock.json
-      
-      - name: Clear npm cache
-        run: npm cache clean --force
 
       - name: Setup Java (Android)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+      
+      - name: Remove node_modules if exists
+        run: rm -rf node_modules
 
       - name: Install dependencies
         run: npm ci
