@@ -34,6 +34,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
     setIsLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
+      // Small delay to ensure state updates before closing
+      await new Promise(resolve => setTimeout(resolve, 100));
       onClose();
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'Invalid credentials');

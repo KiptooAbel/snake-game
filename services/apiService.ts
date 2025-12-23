@@ -39,12 +39,13 @@ export interface LeaderboardEntry {
 
 class ApiService {
   private token: string | null = null;
+  private tokenLoaded: Promise<void>;
 
   constructor() {
-    this.loadToken();
+    this.tokenLoaded = this.loadToken();
   }
 
-  private async loadToken() {
+  private async loadToken(): Promise<void> {
     try {
       // Check if we're in a web environment
       if (typeof window === 'undefined') {
@@ -80,6 +81,9 @@ class ApiService {
   }
 
   private async request(endpoint: string, options: RequestInit = {}): Promise<any> {
+    // Ensure token is loaded before making any request
+    await this.tokenLoaded;
+    
     const url = `${API_BASE_URL}${endpoint}`;
     const config: RequestInit = {
       headers: {
@@ -258,6 +262,11 @@ class ApiService {
   }
 
   // Utility methods
+  async isAuthenticatedAsync(): Promise<boolean> {
+    await this.tokenLoaded;
+    return this.token !== null;
+  }
+
   isAuthenticated(): boolean {
     return this.token !== null;
   }

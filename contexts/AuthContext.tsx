@@ -45,7 +45,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAuthState = async () => {
     try {
-      if (apiService.isAuthenticated()) {
+      // Wait for token to be loaded from storage
+      const isAuth = await apiService.isAuthenticatedAsync();
+      if (isAuth) {
         const userData = await apiService.getProfile();
         setUser(userData);
       }
