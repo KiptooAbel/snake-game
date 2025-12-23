@@ -1,65 +1,44 @@
-name: Android Release APK
+name: Expo Android Build
 
-# Trigger: manually or on push to main
 on:
-  workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
 
+    env:
+      NODE_ENV: production
+
     steps:
-      # 1. Checkout repo
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Setup Node
-      - name: Setup Node.js
+      - name: Setup Node.js (REQUIRED for Expo SDK)
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: 'npm'
+          node-version: 20
+          cache: npm
 
-      # 3. Install dependencies
-      - name: Install JS dependencies
-        run: npm ci
-
-      # 4. Setup Java
-      - name: Setup Java
+      - name: Setup Java (Android)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: 17
 
-      # 5. Setup Android SDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm install
 
-      # 6. Recreate keystore from secret
-      - name: Decode keystore
+      - name: Install Expo CLI
+        run: npm install -g expo-cli
+
+      - name: Prebuild Android
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build Android Release APK
         run: |
-          mkdir -p android/app
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
-
-      # 7. Create gradle.properties for signing
-      - name: Create gradle.properties
-        run: |
-          cat >> android/gradle.properties <<EOF
-          MYAPP_UPLOAD_STORE_FILE=release.keystore
-          MYAPP_UPLOAD_STORE_PASSWORD=${{ secrets.MYAPP_UPLOAD_STORE_PASSWORD }}
-          MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.MYAPP_UPLOAD_KEY_ALIAS }}
-          MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.MYAPP_UPLOAD_KEY_PASSWORD }}
-          EOF
-
-      # 8a. Make gradlew executable
-      - name: Make gradlew executable
-        working-directory: android
-        run: chmod +x ./gradlew
-
-      # 8b. Build release APK
-      - name: Build Release APK
-        working-directory: android
-        run: ./gradlew assembleRelease
-
+          cd android
+          ./gradlew assembleRelease
