@@ -78,3 +78,9 @@ yarn-error.*
 *.tsbuildinfo
 
 # @end expo-cli
+
+android/app/release.keystore
+android/app/release.keystore.base64
+android/app/release.keystore
+android/app/*.keystore
+android/app/*.jks
