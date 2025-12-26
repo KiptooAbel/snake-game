@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import safeConsole from '@/utils/safeConsole';
 
 // API Configuration - Choose the appropriate URL for your setup
 // For local development with XAMPP - use your machine's IP address for device testing
@@ -20,6 +19,9 @@ export interface User {
   total_games: number;
   best_score: number;
   total_score: number;
+  gems: number;
+  hearts: number;
+  unlocked_levels: number[];
 }
 
 export interface Score {
@@ -43,20 +45,11 @@ class ApiService {
   private tokenLoaded: Promise<void>;
 
   constructor() {
-    this.tokenLoaded = this.loadToken().catch(err => {
-      safeConsole.error('Failed to load token during initialization:', err);
-      // Don't throw, just continue without token
-    });
+    this.tokenLoaded = this.loadToken();
   }
 
   private async loadToken(): Promise<void> {
     try {
-      // Skip AsyncStorage in production builds to prevent crashes
-      if (!__DEV__) {
-        this.token = null;
-        return;
-      }
-      
       // Check if we're in a web environment
       if (typeof window === 'undefined') {
         // Server-side rendering or Node.js environment
@@ -64,38 +57,29 @@ class ApiService {
       }
       this.token = await AsyncStorage.getItem('auth_token');
     } catch (error) {
-      safeConsole.error('Error loading token:', error);
-      // Don't throw, just continue without token
+      console.error('Error loading token:', error);
     }
   }
 
   private async saveToken(token: string) {
     try {
       this.token = token;
-      // Skip AsyncStorage in production builds to prevent crashes
-      if (!__DEV__) {
-        return;
-      }
       if (typeof window !== 'undefined') {
         await AsyncStorage.setItem('auth_token', token);
       }
     } catch (error) {
-      safeConsole.error('Error saving token:', error);
+      console.error('Error saving token:', error);
     }
   }
 
   private async removeToken() {
     try {
       this.token = null;
-      // Skip AsyncStorage in production builds to prevent crashes
-      if (!__DEV__) {
-        return;
-      }
       if (typeof window !== 'undefined') {
         await AsyncStorage.removeItem('auth_token');
       }
     } catch (error) {
-      safeConsole.error('Error removing token:', error);
+      console.error('Error removing token:', error);
     }
   }
 
@@ -115,18 +99,18 @@ class ApiService {
     };
 
     try {
-      safeConsole.log(`🌐 Making API request to: ${url}`);
-      safeConsole.log(`🌐 Request method: ${config.method || 'GET'}`);
-      safeConsole.log(`🌐 Auth token present: ${!!this.token}`);
+      console.log(`🌐 Making API request to: ${url}`);
+      console.log(`🌐 Request method: ${config.method || 'GET'}`);
+      console.log(`🌐 Auth token present: ${!!this.token}`);
       
       const response = await fetch(url, config);
-      safeConsole.log(`🌐 Response status: ${response.status} ${response.statusText}`);
+      console.log(`🌐 Response status: ${response.status} ${response.statusText}`);
       
       const data = await response.json();
-      safeConsole.log(`🌐 Response data:`, data);
+      console.log(`🌐 Response data:`, data);
 
       if (!response.ok) {
-        safeConsole.error(`❌ API Error - Status: ${response.status}, Data:`, data);
+        console.error(`❌ API Error - Status: ${response.status}, Data:`, data);
         
         if (response.status === 401) {
           // Token expired or invalid
@@ -145,7 +129,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      safeConsole.error('❌ API Request Error:', error);
+      console.error('❌ API Request Error:', error);
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         throw new Error('Network error. Please check your connection and ensure the server is running.');
       }
@@ -196,7 +180,7 @@ class ApiService {
       await this.request('/auth/logout', { method: 'POST' });
     } catch (error) {
       // Continue with logout even if API call fails
-      safeConsole.error('Logout API error:', error);
+      console.error('Logout API error:', error);
     } finally {
       await this.removeToken();
     }
@@ -280,31 +264,46 @@ class ApiService {
     return this.request('/leaderboard/monthly');
   }
 
-  // Game data sync methods
-  async syncGameData(gameData: {
-    gems: number;
-    hearts: number;
-    unlocked_levels: number[];
-    high_score: number;
-  }): Promise<{
-    gems: number;
-    hearts: number;
-    unlocked_levels: number[];
-    high_score: number;
-  }> {
-    return this.request('/game/sync', {
-      method: 'POST',
-      body: JSON.stringify(gameData),
-    });
+  // Game data methods (gems, hearts, unlocked levels)
+  async getGameData(): Promise<{ gems: number; hearts: number; unlocked_levels: number[] }> {
+    const response = await this.request('/game-data');
+    return response.success ? response.data : response;
   }
 
-  async getGameData(): Promise<{
-    gems: number;
-    hearts: number;
-    unlocked_levels: number[];
-    high_score: number;
-  }> {
-    return this.request('/game/data');
+  async updateGameData(data: {
+    gems?: number;
+    hearts?: number;
+    unlocked_levels?: number[];
+  }): Promise<{ gems: number; hearts: number; unlocked_levels: number[] }> {
+    const response = await this.request('/game-data', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response.success ? response.data : response;
+  }
+
+  async modifyGems(amount: number): Promise<{ gems: number }> {
+    const response = await this.request('/game-data/gems', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+    return response.success ? response.data : response;
+  }
+
+  async modifyHearts(amount: number): Promise<{ hearts: number }> {
+    const response = await this.request('/game-data/hearts', {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+    return response.success ? response.data : response;
+  }
+
+  async unlockLevel(level: number): Promise<{ unlocked_levels: number[] }> {
+    const response = await this.request('/game-data/unlock-level', {
+      method: 'POST',
+      body: JSON.stringify({ level }),
+    });
+    return response.success ? response.data : response;
   }
 
   // Utility methods

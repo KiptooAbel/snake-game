@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import apiService, { User } from '@/services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import safeConsole from '@/utils/safeConsole';
 
 interface AuthContextType {
   user: User | null;
@@ -11,8 +10,10 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
-  onSyncGameData?: () => Promise<void>; // Callback for game data sync
-  setOnSyncGameData: (callback: () => Promise<void>) => void;
+  refreshGameData: () => Promise<void>;
+  updateGems: (amount: number) => Promise<void>;
+  updateHearts: (amount: number) => Promise<void>;
+  unlockLevel: (level: number) => Promise<void>;
 }
 
 interface RegisterData {
@@ -29,22 +30,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    // In development, log warning but don't crash
-    if (__DEV__) {
-      safeConsole.warn('useAuth must be used within an AuthProvider');
-    }
-    // Return a safe default object instead of throwing
-    return {
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      login: async () => {},
-      register: async () => {},
-      logout: async () => {},
-      updateUser: async () => {},
-      onSyncGameData: undefined,
-      setOnSyncGameData: () => {},
-    } as AuthContextType;
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
@@ -56,15 +42,9 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [onSyncGameData, setOnSyncGameData] = useState<(() => Promise<void>) | undefined>();
 
   useEffect(() => {
-    // Small delay to ensure AsyncStorage is ready, especially on app restarts
-    const timer = setTimeout(() => {
-      checkAuthState();
-    }, 100);
-    
-    return () => clearTimeout(timer);
+    checkAuthState();
   }, []);
 
   const checkAuthState = async () => {
@@ -72,24 +52,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Wait for token to be loaded from storage
       const isAuth = await apiService.isAuthenticatedAsync();
       if (isAuth) {
-        try {
-          const userData = await apiService.getProfile();
-          setUser(userData);
-        } catch (profileError) {
-          safeConsole.error('Failed to get profile:', profileError);
-          // Profile fetch failed, clear token
-          await apiService.logout();
-        }
+        const userData = await apiService.getProfile();
+        setUser(userData);
       }
     } catch (error) {
-      safeConsole.error('Auth check failed:', error);
+      console.error('Auth check failed:', error);
       // Token might be expired, clear it
-      try {
-        await apiService.logout();
-      } catch (logoutError) {
-        safeConsole.error('Logout during auth check failed:', logoutError);
-        // Ignore logout errors
-      }
+      await apiService.logout();
     } finally {
       setIsLoading(false);
     }
@@ -100,19 +69,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const { user: userData } = await apiService.login(email, password);
       setUser(userData);
-      
-      // Trigger game data sync after successful login
-      if (onSyncGameData) {
-        if (__DEV__) safeConsole.log('🔄 Triggering game data sync after login');
-        try {
-          await onSyncGameData();
-        } catch (syncError) {
-          safeConsole.error('Game data sync failed after login:', syncError);
-          // Don't throw - login was successful even if sync failed
-        }
-      }
     } catch (error) {
-      safeConsole.error('Login failed:', error);
+      console.error('Login failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -124,19 +82,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const { user: newUser } = await apiService.register(userData);
       setUser(newUser);
-      
-      // Trigger game data sync after successful registration
-      if (onSyncGameData) {
-        if (__DEV__) safeConsole.log('🔄 Triggering game data sync after registration');
-        try {
-          await onSyncGameData();
-        } catch (syncError) {
-          safeConsole.error('Game data sync failed after registration:', syncError);
-          // Don't throw - registration was successful even if sync failed
-        }
-      }
     } catch (error) {
-      safeConsole.error('Registration failed:', error);
+      console.error('Registration failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -149,7 +96,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await apiService.logout();
       setUser(null);
     } catch (error) {
-      safeConsole.error('Logout failed:', error);
+      console.error('Logout failed:', error);
       // Even if logout fails, clear the local state
       setUser(null);
     } finally {
@@ -162,7 +109,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedUser = await apiService.updateProfile(userData);
       setUser(updatedUser);
     } catch (error) {
-      safeConsole.error('User update failed:', error);
+      console.error('User update failed:', error);
+      throw error;
+    }
+  };
+
+  const refreshGameData = async () => {
+    try {
+      const gameData = await apiService.getGameData();
+      if (user) {
+        setUser({
+          ...user,
+          gems: gameData.gems,
+          hearts: gameData.hearts,
+          unlocked_levels: gameData.unlocked_levels,
+        });
+      }
+    } catch (error) {
+      console.error('Game data refresh failed:', error);
+      throw error;
+    }
+  };
+
+  const updateGems = async (amount: number) => {
+    try {
+      const result = await apiService.modifyGems(amount);
+      if (user) {
+        setUser({
+          ...user,
+          gems: result.gems,
+        });
+      }
+    } catch (error) {
+      console.error('Gems update failed:', error);
+      throw error;
+    }
+  };
+
+  const updateHearts = async (amount: number) => {
+    try {
+      const result = await apiService.modifyHearts(amount);
+      if (user) {
+        setUser({
+          ...user,
+          hearts: result.hearts,
+        });
+      }
+    } catch (error) {
+      console.error('Hearts update failed:', error);
+      throw error;
+    }
+  };
+
+  const unlockLevel = async (level: number) => {
+    try {
+      const result = await apiService.unlockLevel(level);
+      if (user) {
+        setUser({
+          ...user,
+          unlocked_levels: result.unlocked_levels,
+        });
+      }
+    } catch (error) {
+      console.error('Level unlock failed:', error);
       throw error;
     }
   };
@@ -175,8 +184,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     updateUser,
-    onSyncGameData,
-    setOnSyncGameData: (callback: () => Promise<void>) => setOnSyncGameData(() => callback),
+    refreshGameData,
+    updateGems,
+    updateHearts,
+    unlockLevel,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
