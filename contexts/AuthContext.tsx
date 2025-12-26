@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import apiService, { User } from '@/services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import safeConsole from '@/utils/safeConsole';
 
 interface AuthContextType {
   user: User | null;
@@ -30,7 +31,7 @@ export const useAuth = () => {
   if (context === undefined) {
     // In development, log warning but don't crash
     if (__DEV__) {
-      console.warn('useAuth must be used within an AuthProvider');
+      safeConsole.warn('useAuth must be used within an AuthProvider');
     }
     // Return a safe default object instead of throwing
     return {
@@ -75,18 +76,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const userData = await apiService.getProfile();
           setUser(userData);
         } catch (profileError) {
-          console.error('Failed to get profile:', profileError);
+          safeConsole.error('Failed to get profile:', profileError);
           // Profile fetch failed, clear token
           await apiService.logout();
         }
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      safeConsole.error('Auth check failed:', error);
       // Token might be expired, clear it
       try {
         await apiService.logout();
       } catch (logoutError) {
-        console.error('Logout during auth check failed:', logoutError);
+        safeConsole.error('Logout during auth check failed:', logoutError);
         // Ignore logout errors
       }
     } finally {
@@ -102,16 +103,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Trigger game data sync after successful login
       if (onSyncGameData) {
-        if (__DEV__) console.log('🔄 Triggering game data sync after login');
+        if (__DEV__) safeConsole.log('🔄 Triggering game data sync after login');
         try {
           await onSyncGameData();
         } catch (syncError) {
-          console.error('Game data sync failed after login:', syncError);
+          safeConsole.error('Game data sync failed after login:', syncError);
           // Don't throw - login was successful even if sync failed
         }
       }
     } catch (error) {
-      console.error('Login failed:', error);
+      safeConsole.error('Login failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -126,16 +127,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Trigger game data sync after successful registration
       if (onSyncGameData) {
-        if (__DEV__) console.log('🔄 Triggering game data sync after registration');
+        if (__DEV__) safeConsole.log('🔄 Triggering game data sync after registration');
         try {
           await onSyncGameData();
         } catch (syncError) {
-          console.error('Game data sync failed after registration:', syncError);
+          safeConsole.error('Game data sync failed after registration:', syncError);
           // Don't throw - registration was successful even if sync failed
         }
       }
     } catch (error) {
-      console.error('Registration failed:', error);
+      safeConsole.error('Registration failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -148,7 +149,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await apiService.logout();
       setUser(null);
     } catch (error) {
-      console.error('Logout failed:', error);
+      safeConsole.error('Logout failed:', error);
       // Even if logout fails, clear the local state
       setUser(null);
     } finally {
@@ -161,7 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedUser = await apiService.updateProfile(userData);
       setUser(updatedUser);
     } catch (error) {
-      console.error('User update failed:', error);
+      safeConsole.error('User update failed:', error);
       throw error;
     }
   };

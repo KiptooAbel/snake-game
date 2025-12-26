@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import safeConsole from '@/utils/safeConsole';
 
 // API Configuration - Choose the appropriate URL for your setup
 // For local development with XAMPP - use your machine's IP address for device testing
@@ -43,7 +44,7 @@ class ApiService {
 
   constructor() {
     this.tokenLoaded = this.loadToken().catch(err => {
-      console.error('Failed to load token during initialization:', err);
+      safeConsole.error('Failed to load token during initialization:', err);
       // Don't throw, just continue without token
     });
   }
@@ -57,7 +58,7 @@ class ApiService {
       }
       this.token = await AsyncStorage.getItem('auth_token');
     } catch (error) {
-      console.error('Error loading token:', error);
+      safeConsole.error('Error loading token:', error);
       // Don't throw, just continue without token
     }
   }
@@ -69,7 +70,7 @@ class ApiService {
         await AsyncStorage.setItem('auth_token', token);
       }
     } catch (error) {
-      console.error('Error saving token:', error);
+      safeConsole.error('Error saving token:', error);
     }
   }
 
@@ -80,7 +81,7 @@ class ApiService {
         await AsyncStorage.removeItem('auth_token');
       }
     } catch (error) {
-      console.error('Error removing token:', error);
+      safeConsole.error('Error removing token:', error);
     }
   }
 
@@ -100,18 +101,18 @@ class ApiService {
     };
 
     try {
-      console.log(`🌐 Making API request to: ${url}`);
-      console.log(`🌐 Request method: ${config.method || 'GET'}`);
-      console.log(`🌐 Auth token present: ${!!this.token}`);
+      safeConsole.log(`🌐 Making API request to: ${url}`);
+      safeConsole.log(`🌐 Request method: ${config.method || 'GET'}`);
+      safeConsole.log(`🌐 Auth token present: ${!!this.token}`);
       
       const response = await fetch(url, config);
-      console.log(`🌐 Response status: ${response.status} ${response.statusText}`);
+      safeConsole.log(`🌐 Response status: ${response.status} ${response.statusText}`);
       
       const data = await response.json();
-      console.log(`🌐 Response data:`, data);
+      safeConsole.log(`🌐 Response data:`, data);
 
       if (!response.ok) {
-        console.error(`❌ API Error - Status: ${response.status}, Data:`, data);
+        safeConsole.error(`❌ API Error - Status: ${response.status}, Data:`, data);
         
         if (response.status === 401) {
           // Token expired or invalid
@@ -130,7 +131,7 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('❌ API Request Error:', error);
+      safeConsole.error('❌ API Request Error:', error);
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         throw new Error('Network error. Please check your connection and ensure the server is running.');
       }
@@ -181,7 +182,7 @@ class ApiService {
       await this.request('/auth/logout', { method: 'POST' });
     } catch (error) {
       // Continue with logout even if API call fails
-      console.error('Logout API error:', error);
+      safeConsole.error('Logout API error:', error);
     } finally {
       await this.removeToken();
     }

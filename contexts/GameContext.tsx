@@ -4,6 +4,7 @@ import { usePowerUps, PowerUpType } from '@/hooks/usePowerUps';
 import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/services/apiService';
 import robustGameStorage from '@/services/robustGameStorage';
+import safeConsole from '@/utils/safeConsole';
 
 // Define obstacle position type
 export interface Position {
@@ -101,10 +102,16 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Load game data from local storage on mount
   useEffect(() => {
     const initializeGameData = async () => {
+      // Skip local storage completely in production to prevent crashes
+      if (!__DEV__) {
+        setIsStorageLoaded(true);
+        return;
+      }
+      
       try {
         await loadGameData();
       } catch (error) {
-        console.error('Failed to initialize game data:', error);
+        safeConsole.error('Failed to initialize game data:', error);
         // Set storage loaded anyway to prevent blocking
         setIsStorageLoaded(true);
       }
@@ -129,7 +136,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     try {
       const data = await robustGameStorage.getGameData();
       if (__DEV__) {
-        console.log('📦 Loaded game data from storage:', data);
+        safeConsole.log('📦 Loaded game data from storage:', data);
       }
       
       setRewardPoints(data.gems);
@@ -138,7 +145,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setHighScore(data.highScore);
       setIsStorageLoaded(true);
     } catch (error) {
-      console.error('Failed to load game data:', error);
+      safeConsole.error('Failed to load game data:', error);
       setIsStorageLoaded(true);
     }
   };
@@ -153,12 +160,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       if (!isAuthenticated) return;
       
       try {
-        console.log('🔄 Syncing game data with server...');
+        safeConsole.log('🔄 Syncing game data with server...');
         
         // Get current local data from storage to ensure we have the latest
         const localData = await robustGameStorage.getGameData();
         
-        console.log('📤 Sending local data to server:', localData);
+        safeConsole.log('📤 Sending local data to server:', localData);
         
         const serverData = {
           gems: localData.gems,
@@ -169,7 +176,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         
         const response = await apiService.syncGameData(serverData);
         
-        console.log('📥 Received server data:', response);
+        safeConsole.log('📥 Received server data:', response);
         
         // Merge server data with local data (take the maximum values)
         const mergedGems = Math.max(localData.gems, response.gems || 0);
@@ -188,71 +195,63 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         
         await robustGameStorage.updateLastSync();
         
-        console.log('✅ Game data synced successfully');
+        safeConsole.log('✅ Game data synced successfully');
       } catch (error) {
-        console.error('❌ Failed to sync game data:', error);
+        safeConsole.error('❌ Failed to sync game data:', error);
       }
     }, 2000);
   }, [isAuthenticated]); // Only depend on isAuthenticated
   
   // Save gems to local storage whenever they change
   useEffect(() => {
-    if (isStorageLoaded) {
+    if (isStorageLoaded && __DEV__) {
       robustGameStorage.saveGems(rewardPoints).catch(() => {});
-      if (__DEV__) {
-        console.log('💎 Saved gems to storage:', rewardPoints);
-      }
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
-      }
+      safeConsole.log('💎 Saved gems to storage:', rewardPoints);
+    }
+    
+    // If authenticated, debounce sync to server (works in production)
+    if (isStorageLoaded && isAuthenticated) {
+      debouncedSync();
     }
   }, [rewardPoints, isStorageLoaded, isAuthenticated]);
   
   // Save hearts to local storage whenever they change
   useEffect(() => {
-    if (isStorageLoaded) {
+    if (isStorageLoaded && __DEV__) {
       robustGameStorage.saveHearts(hearts).catch(() => {});
-      if (__DEV__) {
-        console.log('❤️ Saved hearts to storage:', hearts);
-      }
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
-      }
+      safeConsole.log('❤️ Saved hearts to storage:', hearts);
+    }
+    
+    // If authenticated, debounce sync to server (works in production)
+    if (isStorageLoaded && isAuthenticated) {
+      debouncedSync();
     }
   }, [hearts, isStorageLoaded, isAuthenticated]);
   
   // Save unlocked levels to local storage whenever they change
   useEffect(() => {
-    if (isStorageLoaded) {
+    if (isStorageLoaded && __DEV__) {
       const levelsArray = Array.from(unlockedLevels);
       robustGameStorage.saveUnlockedLevels(levelsArray).catch(() => {});
-      if (__DEV__) {
-        console.log('🔓 Saved unlocked levels to storage:', levelsArray);
-      }
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
-      }
+      safeConsole.log('🔓 Saved unlocked levels to storage:', levelsArray);
+    }
+    
+    // If authenticated, debounce sync to server (works in production)
+    if (isStorageLoaded && isAuthenticated) {
+      debouncedSync();
     }
   }, [unlockedLevels, isStorageLoaded, isAuthenticated]);
   
   // Save high score to local storage whenever it changes
   useEffect(() => {
-    if (isStorageLoaded) {
+    if (isStorageLoaded && __DEV__) {
       robustGameStorage.saveHighScore(highScore).catch(() => {});
-      if (__DEV__) {
-        console.log('🏆 Saved high score to storage:', highScore);
-      }
-      
-      // If authenticated, debounce sync to server
-      if (isAuthenticated) {
-        debouncedSync();
-      }
+      safeConsole.log('🏆 Saved high score to storage:', highScore);
+    }
+    
+    // If authenticated, debounce sync to server (works in production)
+    if (isStorageLoaded && isAuthenticated) {
+      debouncedSync();
     }
   }, [highScore, isStorageLoaded, isAuthenticated]);
   
@@ -269,7 +268,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   // Set the direction change callback
   const setDirectionChangeCallback = useCallback((callback: (direction: Position) => void) => {
-    console.log("Setting new direction callback in context");
+    safeConsole.log("Setting new direction callback in context");
     directionChangeCallbackRef.current = callback;
   }, []);
   
@@ -286,24 +285,24 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   }, []);
   
   const submitScore = useCallback(async () => {
-    console.log('🎯 submitScore called');
-    console.log('   - isAuthenticated:', isAuthenticated);
-    console.log('   - score:', score);
-    console.log('   - gameStartTime:', gameStartTime);
-    console.log('   - API Base URL:', apiService.getApiBaseUrl());
+    safeConsole.log('🎯 submitScore called');
+    safeConsole.log('   - isAuthenticated:', isAuthenticated);
+    safeConsole.log('   - score:', score);
+    safeConsole.log('   - gameStartTime:', gameStartTime);
+    safeConsole.log('   - API Base URL:', apiService.getApiBaseUrl());
     
     if (!isAuthenticated) {
-      console.log('❌ User not authenticated, skipping score submission');
+      safeConsole.log('❌ User not authenticated, skipping score submission');
       return;
     }
     
     if (score === 0) {
-      console.log('❌ Score is 0, skipping score submission');
+      safeConsole.log('❌ Score is 0, skipping score submission');
       return;
     }
     
     if (!gameStartTime) {
-      console.log('❌ No game start time, skipping score submission');
+      safeConsole.log('❌ No game start time, skipping score submission');
       return;
     }
 
@@ -322,34 +321,34 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         },
       };
       
-      console.log('📤 Submitting score:', scoreData);
-      console.log('📤 API Token available:', !!apiService.getToken());
+      safeConsole.log('📤 Submitting score:', scoreData);
+      safeConsole.log('📤 API Token available:', !!apiService.getToken());
       
       const result = await apiService.submitScore(scoreData);
       
-      console.log('✅ Score submitted successfully:', result);
+      safeConsole.log('✅ Score submitted successfully:', result);
     } catch (error) {
-      console.error('❌ Failed to submit score:', error);
+      safeConsole.error('❌ Failed to submit score:', error);
       // Log more details about the error
       if (error instanceof Error) {
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
+        safeConsole.error('❌ Error message:', error.message);
+        safeConsole.error('❌ Error stack:', error.stack);
       }
     }
   }, [isAuthenticated, score, gameStartTime, getActivePowerUps]);
   
   const endGame = useCallback(() => {
-    console.log('🏁 Game ended - endGame called');
+    safeConsole.log('🏁 Game ended - endGame called');
     setGameOver(true);
     setScore(current => {
-      console.log('🏁 Final score:', current);
+      safeConsole.log('🏁 Final score:', current);
       if (current > highScore) {
         setHighScore(current);
       }
       return current;
     });
     // Submit score after game ends if user is authenticated
-    console.log('🏁 Calling submitScore...');
+    safeConsole.log('🏁 Calling submitScore...');
     submitScore();
   }, [highScore, submitScore]);
   
@@ -429,12 +428,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Sync game data with server (called on login or when authenticated)
   const syncGameData = useCallback(async () => {
     if (!isAuthenticated) {
-      console.log('🔄 Not authenticated, skipping sync');
+      safeConsole.log('🔄 Not authenticated, skipping sync');
       return;
     }
     
     try {
-      console.log('🔄 Syncing game data with server...');
+      safeConsole.log('🔄 Syncing game data with server...');
       
       // Get current local data
       const localData = {
@@ -444,12 +443,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         high_score: highScore,
       };
       
-      console.log('📤 Sending local data to server:', localData);
+      safeConsole.log('📤 Sending local data to server:', localData);
       
       // Send data to server
       const response = await apiService.syncGameData(localData);
       
-      console.log('📥 Received server data:', response);
+      safeConsole.log('📥 Received server data:', response);
       
       // Merge server data with local data (take the maximum values)
       const mergedGems = Math.max(rewardPoints, response.gems || 0);
@@ -469,13 +468,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       // Update last sync timestamp
       await gameStorageService.updateLastSync();
       
-      console.log('✅ Game data synced successfully');
-      console.log('   - Gems:', mergedGems);
-      console.log('   - Hearts:', mergedHearts);
-      console.log('   - High Score:', mergedHighScore);
-      console.log('   - Unlocked Levels:', Array.from(mergedLevels));
+      safeConsole.log('✅ Game data synced successfully');
+      safeConsole.log('   - Gems:', mergedGems);
+      safeConsole.log('   - Hearts:', mergedHearts);
+      safeConsole.log('   - High Score:', mergedHighScore);
+      safeConsole.log('   - Unlocked Levels:', Array.from(mergedLevels));
     } catch (error) {
-      console.error('❌ Failed to sync game data:', error);
+      safeConsole.error('❌ Failed to sync game data:', error);
       // Don't throw error, just log it - we can continue with local data
     }
   }, [isAuthenticated, rewardPoints, hearts, unlockedLevels, highScore]);
@@ -487,7 +486,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       try {
         setOnSyncGameData(syncGameData);
       } catch (error) {
-        console.error('Failed to register sync callback:', error);
+        safeConsole.error('Failed to register sync callback:', error);
       }
     }
   }, [setOnSyncGameData]); // Only depend on setOnSyncGameData, not syncGameData itself
@@ -498,12 +497,12 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   // This function will be passed to the ControlPad component
   const handleDirectionChange = useCallback((direction: Position) => {
-    console.log("Handling direction change in context:", direction);
+    safeConsole.log("Handling direction change in context:", direction);
     if (directionChangeCallbackRef.current) {
-      console.log("Calling registered callback!");
+      safeConsole.log("Calling registered callback!");
       directionChangeCallbackRef.current(direction);
     } else {
-      console.log("No direction callback registered");
+      safeConsole.log("No direction callback registered");
     }
   }, []);
   

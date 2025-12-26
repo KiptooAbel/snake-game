@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import safeConsole from '@/utils/safeConsole';
 
 /**
  * Robust storage wrapper with multiple fallback strategies
@@ -90,7 +91,7 @@ class RobustGameStorage {
       
       this.useInMemoryFallback = false;
     } catch (error) {
-      console.warn('AsyncStorage not available, using in-memory fallback:', error);
+      safeConsole.warn('AsyncStorage not available, using in-memory fallback:', error);
       this.useInMemoryFallback = true;
     }
   }
@@ -123,7 +124,7 @@ class RobustGameStorage {
         lastSync: lastSync,
       };
     } catch (error) {
-      console.error('Error loading game data:', error);
+      safeConsole.error('Error loading game data:', error);
       return {
         gems: 0,
         hearts: 0,
