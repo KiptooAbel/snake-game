@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Trigger game data sync after successful login
       if (onSyncGameData) {
-        console.log('🔄 Triggering game data sync after login');
+        if (__DEV__) console.log('🔄 Triggering game data sync after login');
         try {
           await onSyncGameData();
         } catch (syncError) {
@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Trigger game data sync after successful registration
       if (onSyncGameData) {
-        console.log('🔄 Triggering game data sync after registration');
+        if (__DEV__) console.log('🔄 Triggering game data sync after registration');
         try {
           await onSyncGameData();
         } catch (syncError) {

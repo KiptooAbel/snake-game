@@ -18,7 +18,7 @@
       "package": "com.abelkiprop.chompline",
       "versionCode": 1
     },
-      "web": {
+    "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/chompline-favicon.png"
@@ -35,7 +35,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

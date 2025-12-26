@@ -43,7 +43,7 @@ class GameStorageService {
     this.storageAvailable = await isStorageAvailable();
     this.storageChecked = true;
     
-    if (!this.storageAvailable) {
+    if (!this.storageAvailable && __DEV__) {
       console.warn('AsyncStorage is not available, using in-memory storage only');
     }
     

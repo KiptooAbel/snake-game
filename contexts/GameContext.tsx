@@ -1,10 +1,9 @@
-// Modified GameContext.tsx
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { ObstacleType } from '@/components/Obstacle';
 import { usePowerUps, PowerUpType } from '@/hooks/usePowerUps';
 import { useAuth } from '@/contexts/AuthContext';
 import apiService from '@/services/apiService';
-import gameStorageService from '@/services/gameStorageService';
+import robustGameStorage from '@/services/robustGameStorage';
 
 // Define obstacle position type
 export interface Position {
@@ -74,6 +73,8 @@ interface GameProviderProps {
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
+  const [initError, setInitError] = useState<string | null>(null);
+  
   // Game state
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
@@ -109,10 +110,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       }
     };
     
-    // Add a small delay to ensure AsyncStorage is ready in release builds
+    // Small delay to ensure native modules are ready
     const initTimer = setTimeout(() => {
       initializeGameData();
-    }, 100);
+    }, 50);
     
     // Cleanup timeout on unmount
     return () => {
@@ -126,8 +127,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Load game data from local storage
   const loadGameData = async () => {
     try {
-      const data = await gameStorageService.getGameData();
-      console.log('📦 Loaded game data from storage:', data);
+      const data = await robustGameStorage.getGameData();
+      if (__DEV__) {
+        console.log('📦 Loaded game data from storage:', data);
+      }
       
       setRewardPoints(data.gems);
       setHearts(data.hearts);
@@ -153,7 +156,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         console.log('🔄 Syncing game data with server...');
         
         // Get current local data from storage to ensure we have the latest
-        const localData = await gameStorageService.getGameData();
+        const localData = await robustGameStorage.getGameData();
         
         console.log('📤 Sending local data to server:', localData);
         
@@ -183,7 +186,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         setHighScore(mergedHighScore);
         setUnlockedLevels(mergedLevels);
         
-        await gameStorageService.updateLastSync();
+        await robustGameStorage.updateLastSync();
         
         console.log('✅ Game data synced successfully');
       } catch (error) {
@@ -195,71 +198,63 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Save gems to local storage whenever they change
   useEffect(() => {
     if (isStorageLoaded) {
-      try {
-        gameStorageService.saveGems(rewardPoints);
+      robustGameStorage.saveGems(rewardPoints).catch(() => {});
+      if (__DEV__) {
         console.log('💎 Saved gems to storage:', rewardPoints);
-        
-        // If authenticated, debounce sync to server
-        if (isAuthenticated) {
-          debouncedSync();
-        }
-      } catch (error) {
-        console.error('Failed to save gems:', error);
+      }
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
       }
     }
-  }, [rewardPoints, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
+  }, [rewardPoints, isStorageLoaded, isAuthenticated]);
   
   // Save hearts to local storage whenever they change
   useEffect(() => {
     if (isStorageLoaded) {
-      try {
-        gameStorageService.saveHearts(hearts);
+      robustGameStorage.saveHearts(hearts).catch(() => {});
+      if (__DEV__) {
         console.log('❤️ Saved hearts to storage:', hearts);
-        
-        // If authenticated, debounce sync to server
-        if (isAuthenticated) {
-          debouncedSync();
-        }
-      } catch (error) {
-        console.error('Failed to save hearts:', error);
+      }
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
       }
     }
-  }, [hearts, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
+  }, [hearts, isStorageLoaded, isAuthenticated]);
   
   // Save unlocked levels to local storage whenever they change
   useEffect(() => {
     if (isStorageLoaded) {
-      try {
-        const levelsArray = Array.from(unlockedLevels);
-        gameStorageService.saveUnlockedLevels(levelsArray);
+      const levelsArray = Array.from(unlockedLevels);
+      robustGameStorage.saveUnlockedLevels(levelsArray).catch(() => {});
+      if (__DEV__) {
         console.log('🔓 Saved unlocked levels to storage:', levelsArray);
-        
-        // If authenticated, debounce sync to server
-        if (isAuthenticated) {
-          debouncedSync();
-        }
-      } catch (error) {
-        console.error('Failed to save unlocked levels:', error);
+      }
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
       }
     }
-  }, [unlockedLevels, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
+  }, [unlockedLevels, isStorageLoaded, isAuthenticated]);
   
   // Save high score to local storage whenever it changes
   useEffect(() => {
     if (isStorageLoaded) {
-      try {
-        gameStorageService.saveHighScore(highScore);
+      robustGameStorage.saveHighScore(highScore).catch(() => {});
+      if (__DEV__) {
         console.log('🏆 Saved high score to storage:', highScore);
-        
-        // If authenticated, debounce sync to server
-        if (isAuthenticated) {
-          debouncedSync();
-        }
-      } catch (error) {
-        console.error('Failed to save high score:', error);
+      }
+      
+      // If authenticated, debounce sync to server
+      if (isAuthenticated) {
+        debouncedSync();
       }
     }
-  }, [highScore, isStorageLoaded, isAuthenticated]); // Removed debouncedSync from dependencies
+  }, [highScore, isStorageLoaded, isAuthenticated]);
   
   // Get power-ups methods
   const { 
@@ -558,6 +553,15 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     // Direction callback setter
     setDirectionChangeCallback
   };
+  
+  if (initError) {
+    // Render minimal UI if initialization failed
+    return (
+      <GameContext.Provider value={value}>
+        {children}
+      </GameContext.Provider>
+    );
+  }
   
   return (
     <GameContext.Provider value={value}>
