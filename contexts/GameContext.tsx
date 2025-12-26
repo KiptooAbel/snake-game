@@ -89,9 +89,10 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
   const [isStorageLoaded, setIsStorageLoaded] = useState(false);
   
-  // Get auth context with safety check
+  // Get auth context - must be called unconditionally (React hooks rule)
   const authContext = useAuth();
-  const { isAuthenticated, setOnSyncGameData } = authContext || { isAuthenticated: false, setOnSyncGameData: () => {} };
+  const isAuthenticated = authContext?.isAuthenticated || false;
+  const setOnSyncGameData = authContext?.setOnSyncGameData;
   
   // Create a ref for sync in progress
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -108,10 +109,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       }
     };
     
-    initializeGameData();
+    // Add a small delay to ensure AsyncStorage is ready in release builds
+    const initTimer = setTimeout(() => {
+      initializeGameData();
+    }, 100);
     
     // Cleanup timeout on unmount
     return () => {
+      clearTimeout(initTimer);
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
