@@ -51,6 +51,12 @@ class ApiService {
 
   private async loadToken(): Promise<void> {
     try {
+      // Skip AsyncStorage in production builds to prevent crashes
+      if (!__DEV__) {
+        this.token = null;
+        return;
+      }
+      
       // Check if we're in a web environment
       if (typeof window === 'undefined') {
         // Server-side rendering or Node.js environment
@@ -66,6 +72,10 @@ class ApiService {
   private async saveToken(token: string) {
     try {
       this.token = token;
+      // Skip AsyncStorage in production builds to prevent crashes
+      if (!__DEV__) {
+        return;
+      }
       if (typeof window !== 'undefined') {
         await AsyncStorage.setItem('auth_token', token);
       }
@@ -77,6 +87,10 @@ class ApiService {
   private async removeToken() {
     try {
       this.token = null;
+      // Skip AsyncStorage in production builds to prevent crashes
+      if (!__DEV__) {
+        return;
+      }
       if (typeof window !== 'undefined') {
         await AsyncStorage.removeItem('auth_token');
       }

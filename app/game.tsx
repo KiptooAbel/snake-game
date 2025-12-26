@@ -71,6 +71,13 @@ const GameScreen: React.FC = () => {
   }, []);
 
   const checkFirstLaunch = async () => {
+    // Skip AsyncStorage in production - always skip welcome screen
+    if (!__DEV__) {
+      setShowWelcome(false);
+      setIsCheckingFirstLaunch(false);
+      return;
+    }
+    
     try {
       const hasLaunched = await AsyncStorage.getItem('hasLaunched');
       if (hasLaunched) {
@@ -78,25 +85,24 @@ const GameScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Error checking first launch:', error);
-      setShowWelcome(false); // Default to not showing welcome on error
+      setShowWelcome(false);
     } finally {
       setIsCheckingFirstLaunch(false);
     }
   };
 
   const handleGetStarted = async () => {
-    try {
-      await AsyncStorage.setItem('hasLaunched', 'true');
-      setShowWelcome(false);
-      // Show auth modal when user clicks get started
-      setIsFirstTimeAuth(true);
-      setShowAuthModal(true);
-    } catch (error) {
-      console.error('Error setting first launch:', error);
-      setShowWelcome(false);
-      // Still show auth modal even if AsyncStorage fails
-      setIsFirstTimeAuth(true);
-      setShowAuthModal(true);
+    setShowWelcome(false);
+    setIsFirstTimeAuth(true);
+    setShowAuthModal(true);
+    
+    // Only save in development
+    if (__DEV__) {
+      try {
+        await AsyncStorage.setItem('hasLaunched', 'true');
+      } catch (error) {
+        console.error('Error setting first launch:', error);
+      }
     }
   };
 

@@ -101,28 +101,24 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   // Load game data from local storage on mount
   useEffect(() => {
+    // In production, skip all async storage operations immediately
+    if (!__DEV__) {
+      setIsStorageLoaded(true);
+      return;
+    }
+    
+    // Development only - load from storage
     const initializeGameData = async () => {
-      // Skip local storage completely in production to prevent crashes
-      if (!__DEV__) {
-        setIsStorageLoaded(true);
-        return;
-      }
-      
       try {
         await loadGameData();
       } catch (error) {
         safeConsole.error('Failed to initialize game data:', error);
-        // Set storage loaded anyway to prevent blocking
         setIsStorageLoaded(true);
       }
     };
     
-    // Small delay to ensure native modules are ready
-    const initTimer = setTimeout(() => {
-      initializeGameData();
-    }, 50);
+    const initTimer = setTimeout(initializeGameData, 50);
     
-    // Cleanup timeout on unmount
     return () => {
       clearTimeout(initTimer);
       if (syncTimeoutRef.current) {
