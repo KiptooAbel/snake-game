@@ -3,7 +3,7 @@ import { View, StyleSheet, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GameProvider, useGame } from "@/contexts/GameContext";
+import { useGame } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
@@ -124,75 +124,73 @@ const GameScreen: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <GameProvider>
-        <View style={styles.container}>
-          <StatusBar style="light" />
-          
-          <GameContent 
-            onLevelPress={() => setShowLevelModal(true)}
-            onAuthPress={handleAuthPress}
-            onProfilePress={() => setShowProfileModal(true)}
-            onLeaderboardPress={() => setShowLeaderboardModal(true)}
-            onShopPress={() => setShowShopModal(true)}
+      <View style={styles.container}>
+        <StatusBar style="light" />
+        
+        <GameContent 
+          onLevelPress={() => setShowLevelModal(true)}
+          onAuthPress={handleAuthPress}
+          onProfilePress={() => setShowProfileModal(true)}
+          onLeaderboardPress={() => setShowLeaderboardModal(true)}
+          onShopPress={() => setShowShopModal(true)}
+        />
+
+        {/* Level Selection Modal */}
+        <Modal
+          visible={showLevelModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowLevelModal(false)}
+        >
+          <LevelSelector
+            onClose={() => setShowLevelModal(false)}
           />
+        </Modal>
 
-          {/* Level Selection Modal */}
-          <Modal
-            visible={showLevelModal}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={() => setShowLevelModal(false)}
-          >
-            <LevelSelector
-              onClose={() => setShowLevelModal(false)}
-            />
-          </Modal>
+        {/* Authentication Flow */}
+        <AuthFlow
+          visible={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setIsFirstTimeAuth(false);
+          }}
+          isFirstTime={isFirstTimeAuth}
+        />
 
-          {/* Authentication Flow */}
-          <AuthFlow
-            visible={showAuthModal}
-            onClose={() => {
-              setShowAuthModal(false);
-              setIsFirstTimeAuth(false);
+        {/* User Profile Modal */}
+        <Modal
+          visible={showProfileModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowProfileModal(false)}
+        >
+          <UserProfile
+            onClose={() => setShowProfileModal(false)}
+            onShowLeaderboard={() => {
+              setShowProfileModal(false);
+              setShowLeaderboardModal(true);
             }}
-            isFirstTime={isFirstTimeAuth}
           />
+        </Modal>
 
-          {/* User Profile Modal */}
-          <Modal
-            visible={showProfileModal}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setShowProfileModal(false)}
-          >
-            <UserProfile
-              onClose={() => setShowProfileModal(false)}
-              onShowLeaderboard={() => {
-                setShowProfileModal(false);
-                setShowLeaderboardModal(true);
-              }}
-            />
-          </Modal>
-
-          {/* Leaderboard Modal */}
-          <Modal
-            visible={showLeaderboardModal}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={() => setShowLeaderboardModal(false)}
-          >
-            <LeaderboardScreen
-              onClose={() => setShowLeaderboardModal(false)}
-            />
-          </Modal>
-
-          {/* Heart Shop Modal */}
-          <HeartShop
-            visible={showShopModal}
-            onClose={() => setShowShopModal(false)}
+        {/* Leaderboard Modal */}
+        <Modal
+          visible={showLeaderboardModal}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowLeaderboardModal(false)}
+        >
+          <LeaderboardScreen
+            onClose={() => setShowLeaderboardModal(false)}
           />
-        </View>
-      </GameProvider>
+        </Modal>
+
+        {/* Heart Shop Modal */}
+        <HeartShop
+          visible={showShopModal}
+          onClose={() => setShowShopModal(false)}
+        />
+      </View>
     </GestureHandlerRootView>
   );
 };

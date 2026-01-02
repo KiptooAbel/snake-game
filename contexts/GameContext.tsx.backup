@@ -86,15 +86,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [unlockedLevels, setUnlockedLevels] = useState<Set<number>>(new Set([1])); // Level 1 always unlocked
   const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
   
-  // Get auth context with proper null handling
-  let isAuthenticated = false;
-  try {
-    const authContext = useAuth();
-    isAuthenticated = authContext?.isAuthenticated || false;
-  } catch (error) {
-    // AuthContext not available yet, use default
-    console.log('AuthContext not available in GameProvider, using defaults');
-  }
+  // Get auth context
+  const { isAuthenticated } = useAuth();
   
   // Get power-ups methods
   const { 
