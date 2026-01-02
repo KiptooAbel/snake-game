@@ -1,5 +1,6 @@
 // Modified GameContext.tsx
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ObstacleType } from '@/components/Obstacle';
 import { usePowerUps, PowerUpType } from '@/hooks/usePowerUps';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,6 +72,14 @@ interface GameProviderProps {
   children: React.ReactNode;
 }
 
+// Local storage keys
+const STORAGE_KEYS = {
+  GEMS: '@game_gems',
+  HEARTS: '@game_hearts',
+  UNLOCKED_LEVELS: '@game_unlocked_levels',
+  HIGH_SCORE: '@game_high_score',
+};
+
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   console.log('🎮 GameProvider rendering');
   
@@ -87,16 +96,101 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [fruitsEaten, setFruitsEaten] = useState(0); // Count of fruits eaten
   const [unlockedLevels, setUnlockedLevels] = useState<Set<number>>(new Set([1])); // Level 1 always unlocked
   const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
+  const [localDataLoaded, setLocalDataLoaded] = useState(false); // Track if local data has been loaded
   
   // Get auth context with proper null handling
   let isAuthenticated = false;
+  let authContext: any = null;
   try {
-    const authContext = useAuth();
+    authContext = useAuth();
     isAuthenticated = authContext?.isAuthenticated || false;
   } catch (error) {
     // AuthContext not available yet, use default
     console.log('AuthContext not available in GameProvider, using defaults');
   }
+  
+  // Load local data on mount (for non-authenticated users)
+  useEffect(() => {
+    const loadLocalData = async () => {
+      if (!authContext?.user && !localDataLoaded) {
+        try {
+          console.log('📱 Loading local game data...');
+          
+          const [gemsStr, heartsStr, levelsStr, highScoreStr] = await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEYS.GEMS),
+            AsyncStorage.getItem(STORAGE_KEYS.HEARTS),
+            AsyncStorage.getItem(STORAGE_KEYS.UNLOCKED_LEVELS),
+            AsyncStorage.getItem(STORAGE_KEYS.HIGH_SCORE),
+          ]);
+          
+          if (gemsStr !== null) {
+            const gems = parseInt(gemsStr, 10);
+            console.log('💎 Loaded local gems:', gems);
+            setRewardPoints(gems);
+          }
+          
+          if (heartsStr !== null) {
+            const localHearts = parseInt(heartsStr, 10);
+            console.log('❤️ Loaded local hearts:', localHearts);
+            setHearts(localHearts);
+          } else {
+            // Default hearts for new users
+            setHearts(5);
+            await AsyncStorage.setItem(STORAGE_KEYS.HEARTS, '5');
+          }
+          
+          if (levelsStr !== null) {
+            const levels = JSON.parse(levelsStr);
+            console.log('🔓 Loaded local unlocked levels:', levels);
+            setUnlockedLevels(new Set([1, ...levels]));
+          }
+          
+          if (highScoreStr !== null) {
+            const localHighScore = parseInt(highScoreStr, 10);
+            console.log('🏆 Loaded local high score:', localHighScore);
+            setHighScore(localHighScore);
+          }
+          
+          setLocalDataLoaded(true);
+        } catch (error) {
+          console.error('❌ Failed to load local game data:', error);
+          // Set defaults on error
+          setHearts(5);
+          setLocalDataLoaded(true);
+        }
+      }
+    };
+    
+    loadLocalData();
+  }, [authContext?.user, localDataLoaded]);
+  
+  // Sync game data with user data from AuthContext when user logs in
+  useEffect(() => {
+    if (authContext?.user) {
+      console.log('👤 User data loaded, syncing game state:', authContext.user);
+      
+      // Sync gems (reward points)
+      if (typeof authContext.user.gems === 'number') {
+        console.log('💎 Syncing gems:', authContext.user.gems);
+        setRewardPoints(authContext.user.gems);
+      }
+      
+      // Sync hearts
+      if (typeof authContext.user.hearts === 'number') {
+        console.log('❤️ Syncing hearts:', authContext.user.hearts);
+        setHearts(authContext.user.hearts);
+      }
+      
+      // Sync unlocked levels
+      if (Array.isArray(authContext.user.unlocked_levels)) {
+        console.log('🔓 Syncing unlocked levels:', authContext.user.unlocked_levels);
+        setUnlockedLevels(new Set([1, ...authContext.user.unlocked_levels]));
+      }
+    } else if (localDataLoaded) {
+      // If user logs out, load local data
+      console.log('👤 No user, using local data');
+    }
+  }, [authContext?.user, localDataLoaded]);
   
   // Get power-ups methods
   const { 
@@ -186,14 +280,22 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     setScore(current => {
       console.log('🏁 Final score:', current);
       if (current > highScore) {
-        setHighScore(current);
+        const newHighScore = current;
+        setHighScore(newHighScore);
+        
+        // Save high score locally if not authenticated
+        if (!authContext?.user) {
+          AsyncStorage.setItem(STORAGE_KEYS.HIGH_SCORE, newHighScore.toString()).catch((err: Error) =>
+            console.error('Failed to save high score locally:', err)
+          );
+        }
       }
       return current;
     });
     // Submit score after game ends if user is authenticated
     console.log('🏁 Calling submitScore...');
     submitScore();
-  }, [highScore, submitScore]);
+  }, [highScore, submitScore, authContext]);
   
   const restartGame = useCallback(() => {
     setScore(0);
@@ -207,8 +309,21 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   
   // Add reward points (from special fruits)
   const addRewardPoints = useCallback((points: number) => {
-    setRewardPoints(prev => prev + points);
-  }, []);
+    setRewardPoints(prev => {
+      const newValue = prev + points;
+      // Sync with server if authenticated, otherwise save locally
+      if (authContext?.user) {
+        authContext.updateGems(points).catch((err: Error) => 
+          console.error('Failed to sync gems with server:', err)
+        );
+      } else {
+        AsyncStorage.setItem(STORAGE_KEYS.GEMS, newValue.toString()).catch((err: Error) =>
+          console.error('Failed to save gems locally:', err)
+        );
+      }
+      return newValue;
+    });
+  }, [authContext]);
   
   // Increment fruits eaten counter
   const incrementFruitsEaten = useCallback(() => {
@@ -232,26 +347,76 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const unlockLevel = useCallback((levelNum: number) => {
     const cost = levelNum === 2 ? 50 : levelNum === 3 ? 150 : 0;
     if (cost > 0 && rewardPoints >= cost && !unlockedLevels.has(levelNum)) {
-      setRewardPoints(prev => prev - cost);
-      setUnlockedLevels(prev => new Set([...prev, levelNum]));
+      const newGems = rewardPoints - cost;
+      setRewardPoints(newGems);
+      setUnlockedLevels(prev => {
+        const newLevels = new Set([...prev, levelNum]);
+        const levelsArray = Array.from(newLevels).filter(l => l !== 1);
+        
+        // Sync with server if authenticated, otherwise save locally
+        if (authContext?.user) {
+          authContext.updateGems(-cost).catch((err: Error) => 
+            console.error('Failed to sync gems with server:', err)
+          );
+          authContext.unlockLevel(levelNum).catch((err: Error) => 
+            console.error('Failed to sync unlocked level with server:', err)
+          );
+        } else {
+          AsyncStorage.setItem(STORAGE_KEYS.GEMS, newGems.toString()).catch((err: Error) =>
+            console.error('Failed to save gems locally:', err)
+          );
+          AsyncStorage.setItem(STORAGE_KEYS.UNLOCKED_LEVELS, JSON.stringify(levelsArray)).catch((err: Error) =>
+            console.error('Failed to save unlocked levels locally:', err)
+          );
+        }
+        
+        return newLevels;
+      });
+      
       return true;
     }
     return false;
-  }, [rewardPoints, unlockedLevels]);
+  }, [rewardPoints, unlockedLevels, authContext]);
   
   // Add a heart
   const addHeart = useCallback(() => {
-    setHearts(prev => prev + 1);
-  }, []);
+    setHearts(prev => {
+      const newValue = prev + 1;
+      // Sync with server if authenticated, otherwise save locally
+      if (authContext?.user) {
+        authContext.updateHearts(1).catch((err: Error) => 
+          console.error('Failed to sync hearts with server:', err)
+        );
+      } else {
+        AsyncStorage.setItem(STORAGE_KEYS.HEARTS, newValue.toString()).catch((err: Error) =>
+          console.error('Failed to save hearts locally:', err)
+        );
+      }
+      return newValue;
+    });
+  }, [authContext]);
   
   // Use a heart to continue playing
   const useHeart = useCallback(() => {
     if (hearts > 0) {
-      setHearts(prev => prev - 1);
+      setHearts(prev => {
+        const newValue = prev - 1;
+        // Sync with server if authenticated, otherwise save locally
+        if (authContext?.user) {
+          authContext.updateHearts(-1).catch((err: Error) => 
+            console.error('Failed to sync hearts with server:', err)
+          );
+        } else {
+          AsyncStorage.setItem(STORAGE_KEYS.HEARTS, newValue.toString()).catch((err: Error) =>
+            console.error('Failed to save hearts locally:', err)
+          );
+        }
+        return newValue;
+      });
       return true;
     }
     return false;
-  }, [hearts]);
+  }, [hearts, authContext]);
   
   // Check if player has hearts
   const hasHearts = useCallback(() => {
@@ -261,12 +426,35 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   // Buy hearts with reward points (gems)
   const buyHearts = useCallback((count: number, cost: number) => {
     if (rewardPoints >= cost) {
-      setRewardPoints(prev => prev - cost);
-      setHearts(prev => prev + count);
+      const newGems = rewardPoints - cost;
+      setRewardPoints(newGems);
+      setHearts(prev => {
+        const newHearts = prev + count;
+        
+        // Sync with server if authenticated, otherwise save locally
+        if (authContext?.user) {
+          authContext.updateGems(-cost).catch((err: Error) => 
+            console.error('Failed to sync gems with server:', err)
+          );
+          authContext.updateHearts(count).catch((err: Error) => 
+            console.error('Failed to sync hearts with server:', err)
+          );
+        } else {
+          AsyncStorage.setItem(STORAGE_KEYS.GEMS, newGems.toString()).catch((err: Error) =>
+            console.error('Failed to save gems locally:', err)
+          );
+          AsyncStorage.setItem(STORAGE_KEYS.HEARTS, newHearts.toString()).catch((err: Error) =>
+            console.error('Failed to save hearts locally:', err)
+          );
+        }
+        
+        return newHearts;
+      });
+      
       return true;
     }
     return false;
-  }, [rewardPoints]);
+  }, [rewardPoints, authContext]);
   
   const toggleControls = useCallback(() => {
     setShowControls(prev => !prev);
