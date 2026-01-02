@@ -21,14 +21,26 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    console.log('🚀 App starting - Environment:', __DEV__ ? 'Development' : 'Production');
+  }, []);
+
+  useEffect(() => {
     if (loaded) {
+      console.log('✅ Fonts loaded, hiding splash screen');
       SplashScreen.hideAsync();
     }
   }, [loaded]);
 
+  useEffect(() => {
+    console.log('🎯 RootLayout mounted with GameProvider');
+  }, []);
+
   if (!loaded) {
+    console.log('⏳ Waiting for fonts to load...');
     return null;
   }
+
+  console.log('🎨 Rendering app with providers');
 
   return (  
     <ErrorBoundary>

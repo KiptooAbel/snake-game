@@ -16,4 +16,14 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
+// Ensure proper source map generation for production
+config.transformer = {
+  ...config.transformer,
+  minifierConfig: {
+    ...config.transformer?.minifierConfig,
+    keep_classnames: true, // Preserve class names for debugging
+    keep_fnames: true, // Preserve function names for debugging
+  },
+};
+
 module.exports = config;

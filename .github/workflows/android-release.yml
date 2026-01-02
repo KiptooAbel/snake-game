@@ -33,12 +33,20 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        
+      - name: Clear Metro bundler cache
+        run: |
+          rm -rf $TMPDIR/metro-*
+          rm -rf $TMPDIR/haste-map-*
+          npx expo start --clear --non-interactive &
+          sleep 5
+          pkill -f expo
 
       - name: Install Expo CLI
         run: npm install -g expo-cli
 
       - name: Prebuild Android
-        run: npx expo prebuild --platform android --no-install
+        run: npx expo prebuild --platform android --clean
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew

@@ -72,6 +72,8 @@ interface GameProviderProps {
 }
 
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
+  console.log('🎮 GameProvider rendering');
+  
   // Game state
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
