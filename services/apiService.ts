@@ -166,10 +166,10 @@ class ApiService {
       body: JSON.stringify(userData),
     });
 
-    // Handle Laravel backend register response
-    if (response.success && response.token) {
-      await this.saveToken(response.token);
-      return { user: response.user, token: response.token };
+    // Handle Laravel backend register response - now consistent with login
+    if (response.success && response.access_token) {
+      await this.saveToken(response.access_token);
+      return { user: response.user, token: response.access_token };
     }
 
     throw new Error(response.message || 'Registration failed');
