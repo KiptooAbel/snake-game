@@ -98,6 +98,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [hearts, setHearts] = useState(0); // Hearts for continuing after failure
   const [localDataLoaded, setLocalDataLoaded] = useState(false); // Track if local data has been loaded
   
+  // Track previous user state to detect logout vs never logged in
+  const previousUserRef = useRef<any>(null);
+  
   // Get auth context with proper null handling
   let isAuthenticated = false;
   let authContext: any = null;
@@ -251,23 +254,31 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       
       mergeLocalWithServer();
     } else if (localDataLoaded) {
-      // If user logs out, reset everything to 0 and clear local storage
-      console.log('👤 User logged out, resetting all progress');
-      setRewardPoints(0);
-      setHearts(0); // Default hearts for new session
-      setUnlockedLevels(new Set([1]));
-      setHighScore(0);
-      
-      // Clear local storage
-      AsyncStorage.multiRemove([
-        STORAGE_KEYS.GEMS,
-        STORAGE_KEYS.HEARTS,
-        STORAGE_KEYS.UNLOCKED_LEVELS,
-        STORAGE_KEYS.HIGH_SCORE,
-      ]).catch((err: Error) => 
-        console.error('Failed to clear local storage:', err)
-      );
+      // Only clear local storage if user explicitly logged out (was logged in before, now not)
+      if (previousUserRef.current !== null) {
+        console.log('👤 User logged out, resetting all progress and clearing local storage');
+        setRewardPoints(0);
+        setHearts(0);
+        setUnlockedLevels(new Set([1]));
+        setHighScore(0);
+        
+        // Clear local storage on logout
+        AsyncStorage.multiRemove([
+          STORAGE_KEYS.GEMS,
+          STORAGE_KEYS.HEARTS,
+          STORAGE_KEYS.UNLOCKED_LEVELS,
+          STORAGE_KEYS.HIGH_SCORE,
+        ]).catch((err: Error) => 
+          console.error('Failed to clear local storage:', err)
+        );
+      } else {
+        // User never logged in, just playing offline - keep their local data
+        console.log('👤 No user, continuing with local data (offline play)');
+      }
     }
+    
+    // Update previous user reference
+    previousUserRef.current = authContext?.user || null;
   }, [authContext?.user, localDataLoaded]);
   
   // Get power-ups methods
