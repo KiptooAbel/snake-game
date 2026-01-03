@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
     last_name: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { register, isAuthenticated } = useAuth();
+  const { register } = useAuth();
+  const registerSuccessRef = useRef(false);
 
   // Clear form when component unmounts
   useEffect(() => {
@@ -42,15 +43,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
         first_name: '',
         last_name: '',
       });
+      registerSuccessRef.current = false;
     };
   }, []);
-
-  // Auto-close if user becomes authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      onClose();
-    }
-  }, [isAuthenticated, isLoading, onClose]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -91,9 +86,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
   const handleRegister = async () => {
     if (!validateForm()) return;
 
-    // Prevent double registration if already authenticated
-    if (isAuthenticated) {
-      onClose();
+    // Prevent multiple submissions while loading
+    if (isLoading || registerSuccessRef.current) {
       return;
     }
 
@@ -106,7 +100,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
       };
       
       await register(registerData);
-      // Don't call onClose here - let the useEffect handle it when isAuthenticated changes
+      registerSuccessRef.current = true;
+      // Close immediately after successful registration
+      onClose();
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Please try again');
     } finally {
