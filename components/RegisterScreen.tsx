@@ -101,9 +101,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
       
       await register(registerData);
       registerSuccessRef.current = true;
-      // Small delay to allow React to propagate auth state changes
-      await new Promise(resolve => setTimeout(resolve, 50));
-      onClose();
+      // Don't call onClose - let parent's useEffect handle it when isAuthenticated changes
+      // This ensures state has propagated before modal closes
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Please try again');
     } finally {

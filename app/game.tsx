@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Modal } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -70,6 +70,14 @@ const GameScreen: React.FC = () => {
     checkFirstLaunch();
   }, []);
 
+  // Auto-close auth modal when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && showAuthModal) {
+      setShowAuthModal(false);
+      setIsFirstTimeAuth(false);
+    }
+  }, [isAuthenticated, showAuthModal]);
+
   const checkFirstLaunch = async () => {
     // Skip AsyncStorage in production - always skip welcome screen
     if (!__DEV__) {
@@ -106,12 +114,12 @@ const GameScreen: React.FC = () => {
     }
   };
 
-  const handleAuthPress = () => {
+  const handleAuthPress = useCallback(() => {
     if (!isAuthenticated) {
       setIsFirstTimeAuth(false);
       setShowAuthModal(true);
     }
-  };
+  }, [isAuthenticated]);
 
   // Show welcome screen if it's first launch
   if (isCheckingFirstLaunch) {
@@ -150,10 +158,10 @@ const GameScreen: React.FC = () => {
         {/* Authentication Flow */}
         <AuthFlow
           visible={showAuthModal}
-          onClose={() => {
+          onClose={useCallback(() => {
             setShowAuthModal(false);
             setIsFirstTimeAuth(false);
-          }}
+          }, [])}
           isFirstTime={isFirstTimeAuth}
         />
 
