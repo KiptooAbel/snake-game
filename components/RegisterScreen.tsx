@@ -101,7 +101,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
       
       await register(registerData);
       registerSuccessRef.current = true;
-      // Close immediately after successful registration
+      // Small delay to allow React to propagate auth state changes
+      await new Promise(resolve => setTimeout(resolve, 50));
       onClose();
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Please try again');
