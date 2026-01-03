@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,7 +23,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
+
+  // Clear form when modal is closed (when component unmounts or auth succeeds)
+  useEffect(() => {
+    return () => {
+      // Cleanup: clear form fields when component unmounts
+      setEmail('');
+      setPassword('');
+    };
+  }, []);
+
+  // Auto-close if user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      onClose();
+    }
+  }, [isAuthenticated, isLoading, onClose]);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -31,15 +47,16 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
       return;
     }
 
+    // Prevent double login if already authenticated
+    if (isAuthenticated) {
+      onClose();
+      return;
+    }
+
     setIsLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
-      // Clear form fields on successful login
-      setEmail('');
-      setPassword('');
-      // Small delay to ensure state updates before closing
-      await new Promise(resolve => setTimeout(resolve, 100));
-      onClose();
+      // Don't call onClose here - let the useEffect handle it when isAuthenticated changes
     } catch (error: any) {
       Alert.alert('Login Failed', error.message || 'Invalid credentials');
     } finally {

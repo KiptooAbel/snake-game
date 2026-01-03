@@ -20,16 +20,14 @@ const AuthFlow: React.FC<AuthFlowProps> = ({
   const [currentScreen, setCurrentScreen] = useState<'login' | 'register'>(
     isFirstTime ? 'register' : initialScreen
   );
-  const [prevVisible, setPrevVisible] = useState(visible);
 
-  // Reset screen only when modal transitions from closed to open
+  // Reset screen when modal opens (visible changes from false to true)
   useEffect(() => {
-    if (visible && !prevVisible) {
-      // Modal is opening - set the appropriate screen
+    if (visible) {
+      // Modal is opening - set the appropriate screen based on current props
       setCurrentScreen(isFirstTime ? 'register' : initialScreen);
     }
-    setPrevVisible(visible);
-  }, [visible, isFirstTime, initialScreen]);
+  }, [visible]); // Only depend on visible to avoid stale closure issues
 
   const handleSwitchToRegister = () => {
     setCurrentScreen('register');
@@ -41,10 +39,7 @@ const AuthFlow: React.FC<AuthFlowProps> = ({
 
   const handleClose = () => {
     onClose();
-    // Reset screen state after modal closes to avoid flickering during close animation
-    setTimeout(() => {
-      setCurrentScreen(isFirstTime ? 'register' : initialScreen);
-    }, 300);
+    // Screen will reset when modal reopens via useEffect
   };
 
   return (

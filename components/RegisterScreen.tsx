@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -29,7 +29,28 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
     last_name: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, isAuthenticated } = useAuth();
+
+  // Clear form when component unmounts
+  useEffect(() => {
+    return () => {
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+        first_name: '',
+        last_name: '',
+      });
+    };
+  }, []);
+
+  // Auto-close if user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      onClose();
+    }
+  }, [isAuthenticated, isLoading, onClose]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -70,6 +91,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
   const handleRegister = async () => {
     if (!validateForm()) return;
 
+    // Prevent double registration if already authenticated
+    if (isAuthenticated) {
+      onClose();
+      return;
+    }
+
     setIsLoading(true);
     try {
       const registerData = {
@@ -79,18 +106,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
       };
       
       await register(registerData);
-      // Clear form fields on successful registration
-      setFormData({
-        username: '',
-        email: '',
-        password: '',
-        password_confirmation: '',
-        first_name: '',
-        last_name: '',
-      });
-      // Small delay to ensure state updates before closing
-      await new Promise(resolve => setTimeout(resolve, 100));
-      onClose();
+      // Don't call onClose here - let the useEffect handle it when isAuthenticated changes
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message || 'Please try again');
     } finally {
