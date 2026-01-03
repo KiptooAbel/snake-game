@@ -135,8 +135,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
             setHearts(localHearts);
           } else {
             // Default hearts for new users
-            setHearts(5);
-            await AsyncStorage.setItem(STORAGE_KEYS.HEARTS, '5');
+            setHearts(0);
+            await AsyncStorage.setItem(STORAGE_KEYS.HEARTS, '0');
           }
           
           if (levelsStr !== null) {
@@ -155,7 +155,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         } catch (error) {
           console.error('❌ Failed to load local game data:', error);
           // Set defaults on error
-          setHearts(5);
+          setHearts(0);
           setLocalDataLoaded(true);
         }
       }
@@ -169,26 +169,104 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     if (authContext?.user) {
       console.log('👤 User data loaded, syncing game state:', authContext.user);
       
-      // Sync gems (reward points)
-      if (typeof authContext.user.gems === 'number') {
-        console.log('💎 Syncing gems:', authContext.user.gems);
-        setRewardPoints(authContext.user.gems);
-      }
+      // Load local data to merge with server data
+      const mergeLocalWithServer = async () => {
+        try {
+          const [gemsStr, heartsStr, levelsStr, highScoreStr] = await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEYS.GEMS),
+            AsyncStorage.getItem(STORAGE_KEYS.HEARTS),
+            AsyncStorage.getItem(STORAGE_KEYS.UNLOCKED_LEVELS),
+            AsyncStorage.getItem(STORAGE_KEYS.HIGH_SCORE),
+          ]);
+          
+          const localGems = gemsStr ? parseInt(gemsStr, 10) : 0;
+          const localHearts = heartsStr ? parseInt(heartsStr, 10) : 0;
+          const localLevels = levelsStr ? JSON.parse(levelsStr) : [];
+          const localHighScore = highScoreStr ? parseInt(highScoreStr, 10) : 0;
+          
+          const serverGems = authContext.user.gems ?? 0;
+          const serverHearts = authContext.user.hearts ?? 0;
+          const serverLevels = authContext.user.unlocked_levels ?? [];
+          const serverHighScore = authContext.user.best_score ?? 0;
+          
+          // Take the maximum values
+          const mergedGems = Math.max(localGems, serverGems);
+          const mergedHearts = Math.max(localHearts, serverHearts);
+          const mergedHighScore = Math.max(localHighScore, serverHighScore);
+          
+          // Merge unlocked levels (union of both)
+          const mergedLevels = Array.from(new Set([...localLevels, ...serverLevels]));
+          
+          console.log('🔄 Merging local and server data:');
+          console.log('  Gems: local=', localGems, 'server=', serverGems, 'merged=', mergedGems);
+          console.log('  Hearts: local=', localHearts, 'server=', serverHearts, 'merged=', mergedHearts);
+          console.log('  High Score: local=', localHighScore, 'server=', serverHighScore, 'merged=', mergedHighScore);
+          console.log('  Levels: local=', localLevels, 'server=', serverLevels, 'merged=', mergedLevels);
+          
+          // Update local state with merged values
+          setRewardPoints(mergedGems);
+          setHearts(mergedHearts);
+          setUnlockedLevels(new Set([1, ...mergedLevels]));
+          setHighScore(mergedHighScore);
+          
+          // Update server if local had better progress
+          const updates: any = {};
+          if (mergedGems !== serverGems) {
+            updates.gems = mergedGems;
+          }
+          if (mergedHearts !== serverHearts) {
+            updates.hearts = mergedHearts;
+          }
+          if (JSON.stringify(mergedLevels.sort()) !== JSON.stringify(serverLevels.sort())) {
+            updates.unlocked_levels = mergedLevels;
+          }
+          
+          // Update server with merged data if there are changes
+          if (Object.keys(updates).length > 0) {
+            console.log('📤 Updating server with merged data:', updates);
+            await apiService.updateGameData(updates);
+          }
+          
+          // Note: High score is handled separately through score submission
+          // but we set it locally for display purposes
+          
+          // Clear local storage after successful merge
+          await AsyncStorage.multiRemove([
+            STORAGE_KEYS.GEMS,
+            STORAGE_KEYS.HEARTS,
+            STORAGE_KEYS.UNLOCKED_LEVELS,
+            STORAGE_KEYS.HIGH_SCORE,
+          ]);
+          console.log('✅ Local data merged and cleared');
+          
+        } catch (error) {
+          console.error('❌ Failed to merge local data:', error);
+          // Fallback to server data on error
+          setRewardPoints(authContext.user.gems ?? 0);
+          setHearts(authContext.user.hearts ?? 0);
+          setUnlockedLevels(new Set([1, ...(authContext.user.unlocked_levels ?? [])]));
+          setHighScore(authContext.user.best_score ?? 0);
+        }
+      };
       
-      // Sync hearts
-      if (typeof authContext.user.hearts === 'number') {
-        console.log('❤️ Syncing hearts:', authContext.user.hearts);
-        setHearts(authContext.user.hearts);
-      }
-      
-      // Sync unlocked levels
-      if (Array.isArray(authContext.user.unlocked_levels)) {
-        console.log('🔓 Syncing unlocked levels:', authContext.user.unlocked_levels);
-        setUnlockedLevels(new Set([1, ...authContext.user.unlocked_levels]));
-      }
+      mergeLocalWithServer();
     } else if (localDataLoaded) {
-      // If user logs out, load local data
-      console.log('👤 No user, using local data');
+      // If user logs out, reset everything to 0 and clear local storage
+      console.log('👤 User logged out, resetting all progress');
+      setRewardPoints(0);
+      setHearts(0); // Default hearts for new session
+      setUnlockedLevels(new Set([1]));
+      setHighScore(0);
+      
+      // Clear local storage
+      AsyncStorage.multiRemove([
+        STORAGE_KEYS.GEMS,
+        STORAGE_KEYS.HEARTS,
+        STORAGE_KEYS.UNLOCKED_LEVELS,
+        STORAGE_KEYS.HIGH_SCORE,
+      ]).catch((err: Error) => 
+        console.error('Failed to clear local storage:', err)
+      );
     }
   }, [authContext?.user, localDataLoaded]);
   
