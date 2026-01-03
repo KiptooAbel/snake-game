@@ -79,6 +79,15 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
       };
       
       await register(registerData);
+      // Clear form fields on successful registration
+      setFormData({
+        username: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+        first_name: '',
+        last_name: '',
+      });
       // Small delay to ensure state updates before closing
       await new Promise(resolve => setTimeout(resolve, 100));
       onClose();

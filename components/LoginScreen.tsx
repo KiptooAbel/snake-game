@@ -34,6 +34,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
     setIsLoading(true);
     try {
       await login(email.trim().toLowerCase(), password);
+      // Clear form fields on successful login
+      setEmail('');
+      setPassword('');
       // Small delay to ensure state updates before closing
       await new Promise(resolve => setTimeout(resolve, 100));
       onClose();
