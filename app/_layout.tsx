@@ -5,14 +5,33 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { LogBox } from 'react-native';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { GameProvider } from '@/contexts/GameContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+// Ignore specific warnings in production
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+  'Sending `onAnimatedValueUpdate` with no listeners registered',
+]);
+
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Global error handler for unhandled promise rejections
+if (typeof global.ErrorUtils !== 'undefined') {
+  const originalHandler = global.ErrorUtils.getGlobalHandler();
+  global.ErrorUtils.setGlobalHandler((error, isFatal) => {
+    console.error('Global error handler:', error, 'Fatal:', isFatal);
+    // Call original handler
+    if (originalHandler) {
+      originalHandler(error, isFatal);
+    }
+  });
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,7 +40,9 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    console.log('🚀 App starting - Environment:', __DEV__ ? 'Development' : 'Production');
+    const env = (typeof __DEV__ !== 'undefined' && __DEV__) ? 'Development' : 'Production';
+    console.log('🚀 App starting - Environment:', env);
+    console.log('📱 React Native version loaded');
   }, []);
 
   useEffect(() => {

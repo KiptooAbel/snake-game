@@ -52,13 +52,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Wait for token to be loaded from storage
       const isAuth = await apiService.isAuthenticatedAsync();
       if (isAuth) {
-        const userData = await apiService.getProfile();
-        setUser(userData);
+        try {
+          const userData = await apiService.getProfile();
+          setUser(userData);
+        } catch (profileError) {
+          console.error('Failed to fetch profile, clearing auth:', profileError);
+          // Profile fetch failed, clear auth state but don't crash
+          await apiService.logout();
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Token might be expired, clear it
-      await apiService.logout();
+      // Token might be expired or network issue, clear it but don't crash
+      try {
+        await apiService.logout();
+      } catch (logoutError) {
+        console.error('Logout failed:', logoutError);
+      }
     } finally {
       setIsLoading(false);
     }

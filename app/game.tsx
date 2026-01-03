@@ -80,7 +80,8 @@ const GameScreen: React.FC = () => {
 
   const checkFirstLaunch = async () => {
     // Skip AsyncStorage in production - always skip welcome screen
-    if (!__DEV__) {
+    const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+    if (!isDev) {
       setShowWelcome(false);
       setIsCheckingFirstLaunch(false);
       return;
@@ -105,7 +106,8 @@ const GameScreen: React.FC = () => {
     setShowAuthModal(true);
     
     // Only save in development
-    if (__DEV__) {
+    const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+    if (isDev) {
       try {
         await AsyncStorage.setItem('hasLaunched', 'true');
       } catch (error) {
@@ -120,6 +122,11 @@ const GameScreen: React.FC = () => {
       setShowAuthModal(true);
     }
   }, [isAuthenticated]);
+
+  const handleAuthClose = useCallback(() => {
+    setShowAuthModal(false);
+    setIsFirstTimeAuth(false);
+  }, []);
 
   // Show welcome screen if it's first launch
   if (isCheckingFirstLaunch) {
@@ -158,10 +165,7 @@ const GameScreen: React.FC = () => {
         {/* Authentication Flow */}
         <AuthFlow
           visible={showAuthModal}
-          onClose={useCallback(() => {
-            setShowAuthModal(false);
-            setIsFirstTimeAuth(false);
-          }, [])}
+          onClose={handleAuthClose}
           isFirstTime={isFirstTimeAuth}
         />
 

@@ -34,8 +34,12 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('Component stack:', errorInfo.componentStack);
     
     // In production, you might want to send this to a logging service
-    if (!__DEV__) {
-      console.error('Production error - consider implementing remote logging');
+    try {
+      if (typeof __DEV__ !== 'undefined' && !__DEV__) {
+        console.error('Production error - consider implementing remote logging');
+      }
+    } catch (e) {
+      console.error('Production environment');
     }
   }
 
@@ -55,7 +59,7 @@ class ErrorBoundary extends Component<Props, State> {
             <Text style={styles.message}>
               The app encountered an unexpected error. Please try restarting.
             </Text>
-            {__DEV__ && this.state.error && (
+            {(typeof __DEV__ !== 'undefined' && __DEV__) && this.state.error && (
               <Text style={styles.errorText}>{this.state.error.toString()}</Text>
             )}
             <TouchableOpacity style={styles.button} onPress={this.handleReset}>

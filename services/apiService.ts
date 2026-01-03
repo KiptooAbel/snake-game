@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration - Choose the appropriate URL for your setup
 // For local development with XAMPP - use your machine's IP address for device testing
-const API_BASE_URL = __DEV__ 
+const isDevelopment = typeof __DEV__ !== 'undefined' && __DEV__;
+const API_BASE_URL = isDevelopment
   ? 'http://192.168.1.2/minigame/LaravelBackend/public/api'  // XAMPP with local IP for device access
   : 'https://snake.abelk.dev/api'; // Production URL
 
