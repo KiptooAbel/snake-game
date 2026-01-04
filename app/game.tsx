@@ -72,7 +72,9 @@ const GameScreen: React.FC = () => {
 
   // Auto-close auth modal when user becomes authenticated
   useEffect(() => {
+    console.log('[GameScreen] Auth state changed:', { isAuthenticated, showAuthModal });
     if (isAuthenticated && showAuthModal) {
+      console.log('[GameScreen] Closing auth modal automatically');
       setShowAuthModal(false);
       setIsFirstTimeAuth(false);
     }

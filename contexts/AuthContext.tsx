@@ -78,12 +78,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const { user: userData } = await apiService.login(email, password);
+      console.log('[AuthContext] Login successful, setting user:', userData.username);
       setUser(userData);
+      console.log('[AuthContext] User state set');
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
     } finally {
       setIsLoading(false);
+      console.log('[AuthContext] isLoading set to false');
     }
   };
 
