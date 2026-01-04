@@ -20,7 +20,7 @@ interface LoginScreenProps {
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, isFirstTime = false }) => {
-  const [email, setEmail] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -30,14 +30,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
   useEffect(() => {
     return () => {
       // Cleanup: clear form fields when component unmounts
-      setEmail('');
+      setLoginIdentifier('');
       setPassword('');
       loginSuccessRef.current = false;
     };
   }, []);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
+    if (!loginIdentifier.trim() || !password.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -49,7 +49,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
 
     setIsLoading(true);
     try {
-      await login(email.trim().toLowerCase(), password);
+      await login(loginIdentifier.trim().toLowerCase(), password);
       loginSuccessRef.current = true;
       // Don't call onClose - let parent's useEffect handle it when isAuthenticated changes
       // This ensures state has propagated before modal closes
@@ -78,11 +78,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSwitchToRegister, onClose, 
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="Email or Username"
               placeholderTextColor="#666"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              value={loginIdentifier}
+              onChangeText={setLoginIdentifier}
               autoCapitalize="none"
               autoCorrect={false}
             />

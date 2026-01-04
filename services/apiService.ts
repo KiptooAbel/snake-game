@@ -139,10 +139,10 @@ class ApiService {
   }
 
   // Authentication methods
-  async login(email: string, password: string): Promise<{ user: User; token: string }> {
+  async login(loginIdentifier: string, password: string): Promise<{ user: User; token: string }> {
     const response = await this.request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ login: loginIdentifier, password }),
     });
 
     // Handle Laravel backend login response

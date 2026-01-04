@@ -74,11 +74,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (loginIdentifier: string, password: string) => {
     try {
       setIsLoading(true);
-      const { user: userData } = await apiService.login(email, password);
-      console.log('[AuthContext] Login successful, setting user:', userData.username);
+      const { user: userData } = await apiService.login(loginIdentifier, password);
+      console.log('[AuthContext] Login successful, setting user:', userData?.username || userData?.email || 'unknown');
       setUser(userData);
       console.log('[AuthContext] User state set');
     } catch (error) {
