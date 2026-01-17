@@ -11,8 +11,9 @@ export const useGameDimensions = (level: number = 1) => {
   const calculateGameDimensions = () => {
     // Use the full screen width and height
     const availableWidth = windowWidth;
-    // Reserve space only for the header/buttons at the top (about 100px)
-    const availableHeight = windowHeight - 100;
+    // Reserve more space for the header/buttons at the top (150px to be safe)
+    const headerReservedSpace = 150;
+    const availableHeight = windowHeight - headerReservedSpace;
     
     // Calculate appropriate cell size for good gameplay (fixed size)
     const targetCellSize = 20; // Fixed cell size for all modes
@@ -26,13 +27,18 @@ export const useGameDimensions = (level: number = 1) => {
     const cellHeight = availableHeight / verticalCells;
     const cellSize = Math.min(cellWidth, cellHeight);
     
+    // Calculate the exact board dimensions based on grid cells
+    // This ensures the board height matches exactly the grid height
+    const exactBoardWidth = horizontalCells * cellSize;
+    const exactBoardHeight = verticalCells * cellSize;
+    
     return {
       GRID_WIDTH: horizontalCells, // Horizontal grid size
       GRID_HEIGHT: verticalCells,  // Vertical grid size  
       GRID_SIZE: Math.min(horizontalCells, verticalCells), // Compatibility
       CELL_SIZE: cellSize,
-      BOARD_WIDTH: windowWidth, // Full screen width
-      BOARD_HEIGHT: windowHeight - 100, // Full screen height minus header space
+      BOARD_WIDTH: exactBoardWidth, // Exact width based on grid cells
+      BOARD_HEIGHT: exactBoardHeight, // Exact height based on grid cells
     };
   };
 
