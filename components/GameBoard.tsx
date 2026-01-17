@@ -26,6 +26,7 @@ const GameBoard: React.FC = () => {
     startGame,
     endGame,
     restartGame,
+    returnToMenu,
     setDirectionChangeCallback,
     rewardPoints,
     fruitsEaten,
@@ -504,14 +505,69 @@ const GameBoard: React.FC = () => {
   // Helper function to get background color based on level
   const getBackgroundColor = () => {
     switch(level) {
-      case 1: return "#0a0a0a"; // Dark for level 1
-      case 2: return "#3E2723"; // Brown for level 2  
-      case 3: return "#4A148C"; // Purple for level 3
+      case 1: return "#0a1a0a"; // Dark green tint for level 1
+      case 2: return "#2E1A10"; // Dark brown for level 2  
+      case 3: return "#1A0A2E"; // Dark purple for level 3
       default: return "#0a0a0a";
     }
   };
 
-  // Render center obstacles for level 3
+  // Render animated grid pattern
+  const renderGridPattern = () => {
+    const gridLines = [];
+    const gridWidth = GRID_WIDTH || GRID_SIZE;
+    const gridHeight = GRID_HEIGHT || GRID_SIZE;
+    
+    // Get level-specific grid color
+    const getGridColor = () => {
+      switch(level) {
+        case 1: return 'rgba(76, 175, 80, 0.08)'; // Green
+        case 2: return 'rgba(139, 69, 19, 0.08)'; // Brown
+        case 3: return 'rgba(156, 39, 176, 0.08)'; // Purple
+        default: return 'rgba(255, 255, 255, 0.05)';
+      }
+    };
+
+    // Vertical lines
+    for (let i = 0; i <= gridWidth; i++) {
+      gridLines.push(
+        <View
+          key={`v-${i}`}
+          style={[
+            styles.gridLine,
+            {
+              left: i * CELL_SIZE,
+              width: 1,
+              height: BOARD_HEIGHT,
+              backgroundColor: getGridColor(),
+            }
+          ]}
+        />
+      );
+    }
+
+    // Horizontal lines
+    for (let i = 0; i <= gridHeight; i++) {
+      gridLines.push(
+        <View
+          key={`h-${i}`}
+          style={[
+            styles.gridLine,
+            {
+              top: i * CELL_SIZE,
+              height: 1,
+              width: BOARD_WIDTH,
+              backgroundColor: getGridColor(),
+            }
+          ]}
+        />
+      );
+    }
+
+    return gridLines;
+  };
+
+  // Render center obstacles for level 3 with enhanced visuals
   const renderCenterObstacles = () => {
     const gridWidth = GRID_WIDTH || GRID_SIZE;
     const gridHeight = GRID_HEIGHT || GRID_SIZE;
@@ -555,7 +611,9 @@ const GameBoard: React.FC = () => {
                   height: CELL_SIZE,
                 }
               ]}
-            />
+            >
+              <View style={styles.obstacleGlow} />
+            </View>
           );
         }
       }
@@ -576,6 +634,9 @@ const GameBoard: React.FC = () => {
           }
         ]}
       >
+        {/* Grid pattern overlay */}
+        {gameStarted && renderGridPattern()}
+        
         {/* Add PowerUpsDisplay here */}
         <PowerUpsDisplay />
         
@@ -584,31 +645,31 @@ const GameBoard: React.FC = () => {
             score={score} 
             highScore={highScore} 
             onRestart={restartGame}
+            onHome={returnToMenu}
           />
         ) : (
           <>
-            {!gameStarted ? (
-              <TouchableOpacity 
-                style={styles.startButton}
-                onPress={startGame}
-              >
-                <Text style={styles.startButtonText}>START GAME</Text>
-                <Text style={styles.difficultyLabel}>Level: {level}</Text>
-                <Text style={styles.startHint}>Tap to change level</Text>
-              </TouchableOpacity>
-            ) : (
-              <>
-                {/* Render walls for level 2 */}
+            {gameStarted && (
+<>
+                {/* Render walls for level 2 with enhanced styling */}
                 {level === 2 && (
                   <>
                     {/* Top wall */}
-                    <View style={[styles.wall, styles.topWall, { width: BOARD_WIDTH }]} />
+                    <View style={[styles.wall, styles.topWall, { width: BOARD_WIDTH }]}>
+                      <View style={styles.wallGlow} />
+                    </View>
                     {/* Bottom wall */}
-                    <View style={[styles.wall, styles.bottomWall, { width: BOARD_WIDTH, bottom: 0 }]} />
+                    <View style={[styles.wall, styles.bottomWall, { width: BOARD_WIDTH, bottom: 0 }]}>
+                      <View style={styles.wallGlow} />
+                    </View>
                     {/* Left wall */}
-                    <View style={[styles.wall, styles.leftWall, { height: BOARD_HEIGHT }]} />
+                    <View style={[styles.wall, styles.leftWall, { height: BOARD_HEIGHT }]}>
+                      <View style={styles.wallGlow} />
+                    </View>
                     {/* Right wall */}
-                    <View style={[styles.wall, styles.rightWall, { height: BOARD_HEIGHT, right: 0 }]} />
+                    <View style={[styles.wall, styles.rightWall, { height: BOARD_HEIGHT, right: 0 }]}>
+                      <View style={styles.wallGlow} />
+                    </View>
                   </>
                 )}
                 
@@ -751,43 +812,77 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+  gridLine: {
+    position: "absolute",
+    opacity: 0.3,
+  },
   wall: {
     position: "absolute",
-    backgroundColor: "#8B4513", // Brown color for walls
-    borderWidth: 1,
-    borderColor: "#A0522D",
+    backgroundColor: "#FF6B35", // Bright orange-red for walls
+    borderWidth: 2,
+    borderColor: "#FF8F5C",
+    shadowColor: "#FF6B35",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  wallGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 107, 53, 0.3)',
+    shadowColor: '#FF6B35',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
   },
   topWall: {
     top: 0,
     left: 0,
-    height: 4,
+    height: 6,
   },
   bottomWall: {
     position: "absolute",
     left: 0,
-    height: 4,
+    height: 6,
   },
   leftWall: {
     top: 0,
     left: 0,
-    width: 4,
+    width: 6,
   },
   rightWall: {
     position: "absolute",
     top: 0,
-    width: 4,
+    width: 6,
   },
   centerObstacle: {
     position: "absolute",
     backgroundColor: "#9C27B0", // Purple color for level 3 obstacles
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#BA68C8",
-    borderRadius: 2,
+    borderRadius: 3,
     shadowColor: "#9C27B0",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 3,
-    elevation: 5,
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  obstacleGlow: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    backgroundColor: 'rgba(156, 39, 176, 0.2)',
+    borderRadius: 3,
+    shadowColor: '#BA68C8',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
   },
 });
 

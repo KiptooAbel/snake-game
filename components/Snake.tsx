@@ -30,62 +30,66 @@ export default function Snake({ snake, cellSize }: SnakeProps) {
         // Determine if this segment is the head
         const isHead = index === 0;
         
-        // Level-based snake colors 
+        // Enhanced level-based snake colors with better gradients
         let colors: [string, string] = isHead 
-          ? ["#00ff00", "#00cc00"] // Green tones for head (level 1)
+          ? ["#00ff41", "#00cc33"] // Bright neon green for head (level 1)
           : ["#00dd00", "#00aa00"]; // Lighter green for body (level 1)
           
-        // Level 2 uses brown tones
+        // Level 2 uses orange-red tones to match walls
         if (level === 2) {
           colors = isHead 
-            ? ["#8B4513", "#A0522D"] // Brown tones for head
-            : ["#CD853F", "#D2691E"]; // Lighter brown for body
+            ? ["#FF6B35", "#FF8F5C"] // Orange-red for head
+            : ["#FF9F70", "#FFB88C"]; // Lighter orange for body
         }
         
         // Level 3 uses purple tones
         if (level === 3) {
           colors = isHead 
-            ? ["#9C27B0", "#6A1B99"] // Purple tones for head
-            : ["#BA68C8", "#8E24AA"]; // Lighter purple for body
+            ? ["#BA68C8", "#9C27B0"] // Bright purple for head
+            : ["#CE93D8", "#AB47BC"]; // Lighter purple for body
         }
           
         // Modify colors for ghost mode
         if (isGhostMode) {
           colors = isHead 
             ? level === 1 
-              ? ["rgba(0, 255, 0, 0.5)", "rgba(0, 204, 0, 0.5)"] // Green for level 1
+              ? ["rgba(0, 255, 65, 0.4)", "rgba(0, 204, 51, 0.4)"]
               : level === 2
-                ? ["rgba(139, 69, 19, 0.5)", "rgba(160, 82, 45, 0.5)"] // Brown for level 2
-                : ["rgba(156, 39, 176, 0.5)", "rgba(106, 27, 153, 0.5)"] // Purple for level 3
+                ? ["rgba(255, 107, 53, 0.4)", "rgba(255, 143, 92, 0.4)"]
+                : ["rgba(186, 104, 200, 0.4)", "rgba(156, 39, 176, 0.4)"]
             : level === 1
-              ? ["rgba(0, 221, 0, 0.5)", "rgba(0, 170, 0, 0.5)"] // Green for level 1
+              ? ["rgba(0, 221, 0, 0.4)", "rgba(0, 170, 0, 0.4)"]
               : level === 2
-                ? ["rgba(205, 133, 63, 0.5)", "rgba(210, 105, 30, 0.5)"] // Brown for level 2
-                : ["rgba(186, 104, 200, 0.5)", "rgba(142, 36, 170, 0.5)"]; // Purple for level 3
+                ? ["rgba(255, 159, 112, 0.4)", "rgba(255, 184, 140, 0.4)"]
+                : ["rgba(206, 147, 216, 0.4)", "rgba(171, 71, 188, 0.4)"];
         }
         
         // Modify colors for invincibility (golden variations)
         if (isInvincible) {
           colors = isHead 
-            ? level === 1
-              ? ["#FFC107", "#FF8F00"] // Amber/gold for level 1
-              : level === 2
-                ? ["#D4AF37", "#B8860B"] // Dark golden brown for level 2
-                : ["#FFD700", "#DAA520"] // Gold for level 3
-            : level === 1
-              ? ["#FFCA28", "#FFA000"] // Light amber for level 1
-              : level === 2
-                ? ["#DEB887", "#BC9A6A"] // Light golden brown for level 2
-                : ["#FFF8DC", "#F0E68C"]; // Light gold for level 3
+            ? ["#FFD700", "#FFA000"] // Gold for head
+            : ["#FFEB3B", "#FFC107"]; // Light gold for body
         }
+        
+        // Enhanced shadow and glow effects
+        const shadowStyle = {
+          shadowColor: colors[0],
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: isHead ? 0.8 : 0.5,
+          shadowRadius: isHead ? 8 : 5,
+          elevation: isHead ? 10 : 6,
+        };
         
         // Make the snake segments rounded
         return (
           <LinearGradient
             key={index}
             colors={colors}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={[
               styles.segment,
+              shadowStyle,
               {
                 left: segment.x * cellSize,
                 top: segment.y * cellSize,
@@ -95,6 +99,13 @@ export default function Snake({ snake, cellSize }: SnakeProps) {
               },
             ]}
           >
+            {/* Glossy highlight effect */}
+            <View style={[styles.glossyHighlight, { 
+              width: cellSize * 0.4, 
+              height: cellSize * 0.4,
+              borderRadius: cellSize * 0.2 
+            }]} />
+            
             {/* Eyes for the snake head */}
             {isHead && (
               <>
@@ -129,9 +140,9 @@ export default function Snake({ snake, cellSize }: SnakeProps) {
                 style={[
                   styles.shield,
                   {
-                    width: cellSize * 1.4,
-                    height: cellSize * 1.4,
-                    borderRadius: cellSize * 0.7,
+                    width: cellSize * 1.5,
+                    height: cellSize * 1.5,
+                    borderRadius: cellSize * 0.75,
                   },
                 ]}
               />
@@ -148,21 +159,30 @@ const styles = StyleSheet.create({
     position: "absolute",
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    overflow: 'visible',
+  },
+  glossyHighlight: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   eye: {
     position: "absolute",
-    backgroundColor: "black",
+    backgroundColor: "#000",
     borderRadius: 50,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   shield: {
     position: "absolute",
-    borderWidth: 2,
-    borderColor: "rgba(212, 175, 55, 0.8)", // Golden brown shield
-    backgroundColor: "rgba(212, 175, 55, 0.2)",
+    borderWidth: 3,
+    borderColor: "rgba(255, 215, 0, 0.9)",
+    backgroundColor: "rgba(255, 215, 0, 0.15)",
+    top: '50%',
+    left: '50%',
+    marginLeft: -0.75,
+    marginTop: -0.75,
+    transform: [{ scale: 1 }],
   },
 });

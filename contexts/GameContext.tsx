@@ -41,6 +41,7 @@ interface GameContextType {
   startGame: () => void;
   endGame: () => void;
   restartGame: () => void;
+  returnToMenu: () => void;
   toggleControls: () => void;
   handleDirectionChange: (direction: Position) => void;
   submitScore: () => Promise<void>;
@@ -396,6 +397,15 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     // Don't clear obstacles here - let GameBoard handle it
   }, []);
   
+  const returnToMenu = useCallback(() => {
+    setScore(0);
+    setFruitsEaten(0);
+    setGameOver(false);
+    setIsPaused(false);
+    setGameStarted(false);
+    setGameStartTime(null);
+  }, []);
+  
   // Add reward points (from special fruits)
   const addRewardPoints = useCallback((points: number) => {
     setRewardPoints(prev => {
@@ -583,6 +593,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     startGame,
     endGame,
     restartGame,
+    returnToMenu,
     toggleControls,
     handleDirectionChange,
     submitScore,

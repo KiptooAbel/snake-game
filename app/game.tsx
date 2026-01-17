@@ -7,6 +7,7 @@ import { useGame } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import GameBoard from "@/components/GameBoard";
 import Header from "@/components/Header";
+import MainMenu from "@/components/MainMenu";
 import LevelSelector from "@/components/LevelSelector";
 import AuthFlow from "@/components/AuthFlow";
 import UserProfile from "@/components/UserProfile";
@@ -22,7 +23,7 @@ const GameContent: React.FC<{
   onLeaderboardPress: () => void;
   onShopPress: () => void;
 }> = ({ onLevelPress, onAuthPress, onProfilePress, onLeaderboardPress, onShopPress }) => {
-  const { level } = useGame();
+  const { level, gameStarted, gameOver } = useGame();
   
   // Get level-based header background color
   const getHeaderBackgroundColor = () => {
@@ -36,18 +37,26 @@ const GameContent: React.FC<{
 
   return (
     <>
-      <View style={[styles.headerSection, { backgroundColor: getHeaderBackgroundColor() }]}>
-        <Header 
-          onLevelPress={onLevelPress}
-          onAuthPress={onAuthPress}
-          onProfilePress={onProfilePress}
-          onLeaderboardPress={onLeaderboardPress}
-          onShopPress={onShopPress}
-        />
-      </View>
+      {/* Only show header when game is active */}
+      {gameStarted && !gameOver && (
+        <View style={[styles.headerSection, { backgroundColor: getHeaderBackgroundColor() }]}>
+          <Header />
+        </View>
+      )}
       
       <View style={styles.gameSection}>
-        <GameBoard />
+        {/* Show MainMenu only when game hasn't started and not in game over state */}
+        {!gameStarted && !gameOver ? (
+          <MainMenu
+            onLevelPress={onLevelPress}
+            onAuthPress={onAuthPress}
+            onProfilePress={onProfilePress}
+            onLeaderboardPress={onLeaderboardPress}
+            onShopPress={onShopPress}
+          />
+        ) : (
+          <GameBoard />
+        )}
       </View>
     </>
   );
@@ -155,8 +164,7 @@ const GameScreen: React.FC = () => {
         {/* Level Selection Modal */}
         <Modal
           visible={showLevelModal}
-          transparent={true}
-          animationType="fade"
+          animationType="slide"
           onRequestClose={() => setShowLevelModal(false)}
         >
           <LevelSelector

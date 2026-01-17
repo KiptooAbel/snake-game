@@ -54,7 +54,6 @@ const AuthFlow: React.FC<AuthFlowProps> = ({
   return (
     <Modal
       visible={visible}
-      transparent={true}
       animationType="slide"
       onRequestClose={handleClose}
     >

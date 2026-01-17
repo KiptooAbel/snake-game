@@ -11,6 +11,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RegisterScreenProps {
@@ -111,22 +112,35 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled"
+    <View style={styles.fullScreenContainer}>
+      {/* Background decorations */}
+      <View style={styles.backgroundDecorations}>
+        <View style={[styles.decoration, styles.decoration1]} />
+        <View style={[styles.decoration, styles.decoration2]} />
+        <View style={[styles.decoration, styles.decoration3]} />
+      </View>
+
+      {/* Close button */}
+      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <Text style={styles.closeIcon}>✕</Text>
+      </TouchableOpacity>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
       >
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>{isFirstTime ? 'Welcome to Snake Game!' : 'Join the Game!'}</Text>
-          <Text style={styles.subtitle}>
-            {isFirstTime 
-              ? 'Create your account to start playing and competing'
-              : 'Create your account to compete'
-            }
-          </Text>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>{isFirstTime ? 'Join the Game!' : 'Create Account'}</Text>
+            <Text style={styles.subtitle}>
+              {isFirstTime 
+                ? 'Sign up to track scores and compete globally'
+                : 'Create your account to start competing'
+              }
+            </Text>
 
           <View style={styles.row}>
             <View style={[styles.inputContainer, styles.halfWidth]}>
@@ -201,15 +215,26 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
           </View>
 
           <TouchableOpacity
-            style={[styles.button, styles.registerButton]}
+            style={styles.button}
             onPress={handleRegister}
             disabled={isLoading}
+            activeOpacity={0.8}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
+            <LinearGradient
+              colors={['#4CAF50', '#45a049', '#388E3C']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buttonGradient}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonIcon}>✨</Text>
+                  <Text style={styles.buttonText}>Create Account</Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
 
           <View style={styles.switchContainer}>
@@ -227,10 +252,64 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ onSwitchToLogin, onClos
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  </View>
   );
 };
 
 const styles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#111',
+  },
+  backgroundDecorations: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  decoration: {
+    position: 'absolute',
+    borderRadius: 100,
+    opacity: 0.05,
+  },
+  decoration1: {
+    width: 200,
+    height: 200,
+    backgroundColor: '#4CAF50',
+    top: -50,
+    right: -50,
+  },
+  decoration2: {
+    width: 150,
+    height: 150,
+    backgroundColor: '#FF1744',
+    bottom: 100,
+    left: -30,
+  },
+  decoration3: {
+    width: 180,
+    height: 180,
+    backgroundColor: '#9C27B0',
+    top: '40%',
+    right: -70,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  closeIcon: {
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold',
+  },
   container: {
     flex: 1,
   },
@@ -240,23 +319,29 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   formContainer: {
-    backgroundColor: 'rgba(17, 17, 17, 0.95)',
-    borderRadius: 15,
-    padding: 25,
-    marginHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    padding: 30,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   title: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#4CAF50',
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: 2,
+    textShadowColor: 'rgba(76, 175, 80, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#ccc',
+    fontSize: 14,
+    color: '#AAA',
     textAlign: 'center',
     marginBottom: 30,
+    letterSpacing: 1,
   },
   row: {
     flexDirection: 'row',
@@ -269,27 +354,44 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   input: {
-    backgroundColor: '#2a2a2a',
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
     color: '#fff',
-    borderWidth: 1,
-    borderColor: '#333',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   button: {
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 15,
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: 20,
+    shadowColor: '#4CAF50',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 10,
   },
-  registerButton: {
-    backgroundColor: '#2196F3',
+  buttonGradient: {
+    paddingVertical: 18,
+    paddingHorizontal: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  buttonIcon: {
+    fontSize: 20,
+    color: 'white',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   switchContainer: {
     flexDirection: 'row',
@@ -297,19 +399,20 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   switchText: {
-    color: '#ccc',
+    color: '#AAA',
     fontSize: 16,
   },
   linkText: {
-    color: '#2196F3',
+    color: '#4CAF50',
     fontSize: 16,
     fontWeight: 'bold',
   },
   skipButton: {
     alignItems: 'center',
+    paddingVertical: 10,
   },
   skipText: {
-    color: '#888',
+    color: '#666',
     fontSize: 16,
   },
 });

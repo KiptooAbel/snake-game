@@ -200,20 +200,40 @@ export default function Food({
   const renderFoodEffects = () => {
     if (foodType !== 'REGULAR') {
       return (
-        <Animated.View
-          style={[
-            styles.glow,
-            {
-              width: cellSize * 1.5,
-              height: cellSize * 1.5,
-              opacity: pulseAnim.interpolate({
-                inputRange: [1, foodProps.pulseScale],
-                outputRange: [0.3, 0.6],
-              }),
-              backgroundColor: `${foodProps.color}40`, // Add transparency
-            },
-          ]}
-        />
+        <>
+          {/* Outer glow */}
+          <Animated.View
+            style={[
+              styles.glow,
+              {
+                width: cellSize * 2,
+                height: cellSize * 2,
+                borderRadius: cellSize,
+                opacity: pulseAnim.interpolate({
+                  inputRange: [1, foodProps.pulseScale],
+                  outputRange: [0.2, 0.5],
+                }),
+                backgroundColor: `${foodProps.color}30`,
+              },
+            ]}
+          />
+          {/* Inner glow */}
+          <Animated.View
+            style={[
+              styles.innerGlow,
+              {
+                width: cellSize * 1.3,
+                height: cellSize * 1.3,
+                borderRadius: cellSize * 0.65,
+                opacity: pulseAnim.interpolate({
+                  inputRange: [1, foodProps.pulseScale],
+                  outputRange: [0.4, 0.8],
+                }),
+                backgroundColor: `${foodProps.color}50`,
+              },
+            ]}
+          />
+        </>
       );
     }
     
@@ -240,16 +260,31 @@ export default function Food({
       {/* Food effects in background */}
       {renderFoodEffects()}
       
-      {/* Main food shape */}
+      {/* Main food shape with enhanced shadow */}
       <LinearGradient
         colors={[foodProps.color, foodProps.secondaryColor]}
         style={[
           styles.food,
-          { width: cellSize * 0.8, height: cellSize * 0.8 },
+          { 
+            width: cellSize * 0.8, 
+            height: cellSize * 0.8,
+            shadowColor: foodProps.color,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.8,
+            shadowRadius: foodType !== 'REGULAR' ? 8 : 4,
+            elevation: foodType !== 'REGULAR' ? 10 : 5,
+          },
         ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-      />
+      >
+        {/* Glossy highlight */}
+        <View style={[styles.glossy, {
+          width: cellSize * 0.3,
+          height: cellSize * 0.3,
+          borderRadius: cellSize * 0.15,
+        }]} />
+      </LinearGradient>
       
       {/* Power-up symbol */}
       {foodType !== 'REGULAR' && (
@@ -257,7 +292,7 @@ export default function Food({
           <Animated.Text 
             style={[
               styles.symbol,
-              { fontSize: cellSize * 0.4 }
+              { fontSize: cellSize * 0.45 }
             ]}
           >
             {foodProps.symbol}
@@ -294,21 +329,24 @@ const styles = StyleSheet.create({
   },
   food: {
     borderRadius: 50,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  glossy: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
   stem: {
     position: "absolute",
-    backgroundColor: "brown",
+    backgroundColor: "#654321",
     top: -5,
     borderRadius: 2,
   },
   leaf: {
     position: "absolute",
-    backgroundColor: "green",
+    backgroundColor: "#2E7D32",
     top: -3,
     right: -5,
     borderRadius: 10,
@@ -316,7 +354,9 @@ const styles = StyleSheet.create({
   },
   glow: {
     position: "absolute",
-    borderRadius: 100,
+  },
+  innerGlow: {
+    position: "absolute",
   },
   symbolContainer: {
     position: "absolute",
@@ -326,8 +366,8 @@ const styles = StyleSheet.create({
   symbol: {
     color: "white",
     fontWeight: "bold",
-    textShadowColor: "rgba(0, 0, 0, 0.7)",
+    textShadowColor: "rgba(0, 0, 0, 0.9)",
     textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 1,
+    textShadowRadius: 2,
   },
 });

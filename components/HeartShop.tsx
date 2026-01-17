@@ -1,6 +1,7 @@
-// HeartShop.tsx - Modal for purchasing hearts with gems
+// HeartShop.tsx - Heart shop with modern design
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useGame } from "@/contexts/GameContext";
 
 interface HeartShopProps {
@@ -10,90 +11,115 @@ interface HeartShopProps {
 
 // Define heart packages
 const HEART_PACKAGES = [
-  { hearts: 1, cost: 15, label: "Starter" },
-  { hearts: 3, cost: 40, label: "Bundle" },
-  { hearts: 5, cost: 60, label: "Value Pack" },
-  { hearts: 10, cost: 100, label: "Mega Pack" },
+  { hearts: 1, cost: 15, label: "Starter", icon: "❤️" },
+  { hearts: 3, cost: 40, label: "Bundle", icon: "❤️❤️❤️" },
+  { hearts: 5, cost: 60, label: "Value Pack", icon: "💕" },
+  { hearts: 10, cost: 100, label: "Mega Pack", icon: "💖" },
 ];
 
 export default function HeartShop({ visible, onClose }: HeartShopProps) {
   const { rewardPoints, hearts, buyHearts } = useGame();
+  const [purchaseSuccess, setPurchaseSuccess] = useState<string | null>(null);
 
   const handlePurchase = (packageItem: typeof HEART_PACKAGES[0]) => {
     if (rewardPoints >= packageItem.cost) {
       const success = buyHearts(packageItem.hearts, packageItem.cost);
       if (success) {
-        Alert.alert(
-          "Purchase Successful! ❤️",
-          `You bought ${packageItem.hearts} ${packageItem.hearts === 1 ? 'heart' : 'hearts'}!`,
-          [{ text: "OK" }]
-        );
+        setPurchaseSuccess(`+${packageItem.hearts} ❤️`);
+        setTimeout(() => setPurchaseSuccess(null), 2000);
       }
-    } else {
-      Alert.alert(
-        "Not Enough Gems! 💎",
-        `You need ${packageItem.cost} gems but only have ${rewardPoints}.`,
-        [{ text: "OK" }]
-      );
     }
   };
 
   return (
     <Modal
       visible={visible}
-      transparent={true}
       animationType="slide"
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>❤️ Heart Shop</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Background decorations */}
+        <View style={styles.backgroundDecorations}>
+          <View style={[styles.decoration, styles.decoration1]} />
+          <View style={[styles.decoration, styles.decoration2]} />
+          <View style={[styles.decoration, styles.decoration3]} />
+        </View>
 
-          <View style={styles.balanceContainer}>
-            <Text style={styles.balanceLabel}>Your Balance:</Text>
-            <View style={styles.balanceRow}>
-              <Text style={styles.gemsText}>💎 {rewardPoints}</Text>
-              <Text style={styles.heartsText}>❤️ {hearts}</Text>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Heart Shop</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Balance Display */}
+        <View style={styles.balanceContainer}>
+          <Text style={styles.balanceTitle}>Your Balance</Text>
+          <View style={styles.balanceRow}>
+            <View style={styles.balanceCard}>
+              <Text style={styles.balanceIcon}>💎</Text>
+              <Text style={styles.balanceValue}>{rewardPoints}</Text>
+              <Text style={styles.balanceLabel}>Gems</Text>
+            </View>
+            <View style={styles.balanceCard}>
+              <Text style={styles.balanceIcon}>❤️</Text>
+              <Text style={styles.balanceValue}>{hearts}</Text>
+              <Text style={styles.balanceLabel}>Hearts</Text>
             </View>
           </View>
+        </View>
 
-          <View style={styles.packagesContainer}>
-            {HEART_PACKAGES.map((pkg, index) => {
-              const canAfford = rewardPoints >= pkg.cost;
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.packageCard,
-                    !canAfford && styles.packageCardDisabled
-                  ]}
-                  onPress={() => handlePurchase(pkg)}
-                  activeOpacity={0.8}
-                  disabled={!canAfford}
+        {/* Success Message */}
+        {purchaseSuccess && (
+          <View style={styles.successMessage}>
+            <Text style={styles.successText}>{purchaseSuccess}</Text>
+          </View>
+        )}
+
+        {/* Packages Grid */}
+        <View style={styles.packagesContainer}>
+          {HEART_PACKAGES.map((pkg, index) => {
+            const canAfford = rewardPoints >= pkg.cost;
+            return (
+              <TouchableOpacity
+                key={index}
+                style={styles.packageCard}
+                onPress={() => canAfford && handlePurchase(pkg)}
+                activeOpacity={0.9}
+                disabled={!canAfford}
+              >
+                <LinearGradient
+                  colors={canAfford ? ["#FF1744", "#C62828"] : ["#424242", "#212121"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.packageGradient}
                 >
                   <Text style={styles.packageLabel}>{pkg.label}</Text>
-                  <View style={styles.packageContent}>
-                    <Text style={styles.packageHearts}>❤️ {pkg.hearts}</Text>
+                  <Text style={styles.packageIcon}>{pkg.icon}</Text>
+                  <Text style={styles.packageHearts}>{pkg.hearts} {pkg.hearts === 1 ? 'Heart' : 'Hearts'}</Text>
+                  
+                  <View style={styles.costContainer}>
                     <Text style={styles.packageCost}>💎 {pkg.cost}</Text>
                   </View>
+
                   {!canAfford && (
-                    <View style={styles.lockedBadge}>
-                      <Text style={styles.lockedText}>🔒</Text>
+                    <View style={styles.lockedOverlay}>
+                      <Text style={styles.lockedIcon}>🔒</Text>
                     </View>
                   )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-          <Text style={styles.infoText}>
-            Collect hearts to continue playing when you fail!
-          </Text>
+        {/* Info Footer */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoTitle}>💡 How to Earn Gems</Text>
+          <Text style={styles.infoText}>💎 Ruby (15th fruit): +10 gems</Text>
+          <Text style={styles.infoText}>💎 Emerald (30th fruit): +25 gems</Text>
+          <Text style={styles.infoText}>💎 Diamond (50th fruit): +50 gems</Text>
         </View>
       </View>
     </Modal>
@@ -103,120 +129,203 @@ export default function HeartShop({ visible, onClose }: HeartShopProps) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#111",
   },
-  container: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 20,
-    padding: 25,
-    width: "90%",
-    maxWidth: 500,
-    borderWidth: 2,
-    borderColor: "#FF1744",
+  backgroundDecorations: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  decoration: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#FF1744',
+    opacity: 0.05,
+  },
+  decoration1: {
+    top: 50,
+    right: -50,
+  },
+  decoration2: {
+    top: 250,
+    left: -80,
+  },
+  decoration3: {
+    bottom: 150,
+    right: 50,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    zIndex: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#FF1744",
+    color: "white",
+    letterSpacing: 2,
   },
   closeButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    backgroundColor: "#333",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
   closeButtonText: {
-    color: "#fff",
-    fontSize: 20,
+    fontSize: 24,
+    color: "white",
     fontWeight: "bold",
   },
   balanceContainer: {
-    backgroundColor: "#2a2a2a",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    zIndex: 1,
   },
-  balanceLabel: {
-    fontSize: 14,
-    color: "#AAA",
-    marginBottom: 8,
+  balanceTitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   balanceRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "center",
+    gap: 20,
   },
-  gemsText: {
-    fontSize: 20,
-    color: "#FFD700",
-    fontWeight: "bold",
+  balanceCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: 'center',
+    minWidth: 120,
   },
-  heartsText: {
-    fontSize: 20,
-    color: "#FF1744",
+  balanceIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  balanceValue: {
+    fontSize: 24,
     fontWeight: "bold",
+    color: "white",
+    marginBottom: 4,
+  },
+  balanceLabel: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.6)",
+  },
+  successMessage: {
+    backgroundColor: 'rgba(76, 175, 80, 0.9)',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    alignSelf: 'center',
+    marginVertical: 10,
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  successText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
   },
   packagesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 20,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    gap: 15,
   },
   packageCard: {
-    width: "48%",
-    backgroundColor: "#2a2a2a",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#FF1744",
-    position: "relative",
+    width: "45%",
+    height: 180,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  packageCardDisabled: {
-    opacity: 0.5,
-    borderColor: "#555",
+  packageGradient: {
+    flex: 1,
+    padding: 15,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   packageLabel: {
     fontSize: 12,
-    color: "#AAA",
-    marginBottom: 8,
-    textAlign: "center",
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: '600',
+    letterSpacing: 1,
   },
-  packageContent: {
-    alignItems: "center",
+  packageIcon: {
+    fontSize: 40,
   },
   packageHearts: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#FF1744",
-    marginBottom: 5,
+    color: "white",
+    textAlign: 'center',
+  },
+  costContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 15,
   },
   packageCost: {
     fontSize: 16,
     color: "#FFD700",
-    fontWeight: "600",
+    fontWeight: "700",
   },
-  lockedBadge: {
-    position: "absolute",
-    top: 5,
-    right: 5,
+  lockedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
   },
-  lockedText: {
+  lockedIcon: {
+    fontSize: 40,
+  },
+  infoContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    marginTop: 'auto',
+  },
+  infoTitle: {
     fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    textAlign: 'center',
+    marginBottom: 12,
   },
   infoText: {
-    fontSize: 12,
-    color: "#AAA",
     textAlign: "center",
-    fontStyle: "italic",
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 13,
+    marginBottom: 4,
   },
 });

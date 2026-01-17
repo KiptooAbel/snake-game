@@ -1,80 +1,86 @@
-// Modified Header.tsx
+// Modern Header.tsx - Displays game stats with modern design
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useGame } from "@/contexts/GameContext";
 import { useAuth } from "@/contexts/AuthContext";
 import PowerUpsDisplay from "@/components/PowerUpsDisplay";
 
-interface HeaderProps {
-  onLevelPress: () => void;
-  onAuthPress: () => void;
-  onProfilePress: () => void;
-  onLeaderboardPress: () => void;
-  onShopPress: () => void;
-}
+interface HeaderProps {}
 
-const Header: React.FC<HeaderProps> = ({ 
-  onLevelPress,
-  onAuthPress, 
-  onProfilePress, 
-  onLeaderboardPress,
-  onShopPress
-}) => {
+const Header: React.FC<HeaderProps> = () => {
   // Get game state from context
   const { score, highScore, level, gameStarted, gameOver, isPaused, togglePause, endGame, rewardPoints, hearts } = useGame();
   const { isAuthenticated, user } = useAuth();
   
-  // Get level button color
-  const getLevelColor = () => {
+  // Get level-based colors
+  const getLevelColors = () => {
     switch(level) {
-      case 1: return "#4CAF50"; // Green for level 1
-      case 2: return "#8B4513"; // Brown for level 2
-      case 3: return "#9C27B0"; // Purple for level 3
-      default: return "#4CAF50";
+      case 1: return {
+        bg: "rgba(10, 26, 10, 0.95)",
+        accent: "#4CAF50"
+      };
+      case 2: return {
+        bg: "rgba(46, 26, 16, 0.95)",
+        accent: "#FF6B35"
+      };
+      case 3: return {
+        bg: "rgba(26, 10, 46, 0.95)",
+        accent: "#BA68C8"
+      };
+      default: return {
+        bg: "rgba(10, 10, 10, 0.95)",
+        accent: "#4CAF50"
+      };
     }
   };
   
-  // Get level-based header background color
-  const getHeaderBackgroundColor = () => {
-    switch(level) {
-      case 1: return "#1a1a1a"; // Dark for level 1
-      case 2: return "#3E2723"; // Brown for level 2
-      case 3: return "#4A148C"; // Purple for level 3
-      default: return "#1a1a1a";
-    }
-  };
+  const colors = getLevelColors();
   
   // If game is active and not over, show game controls
   if (gameStarted && !gameOver) {
     return (
       <View style={styles.headerContainer}>
-        <View style={[styles.gameHeader, { backgroundColor: getHeaderBackgroundColor() }]}>
+        <View style={[styles.gameHeader, { backgroundColor: colors.bg }]}>
+          {/* Left side - Controls */}
           <View style={styles.gameControls}>
             <TouchableOpacity 
-              style={styles.gameButton}
+              style={[styles.controlButton, styles.pauseButton]}
               onPress={togglePause}
             >
-              <Text style={styles.gameButtonText}>
-                {isPaused ? "Resume" : "Pause"}
-              </Text>
+              <Text style={styles.controlIcon}>{isPaused ? "▶" : "⏸"}</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.gameButton, styles.quitButton]}
+              style={[styles.controlButton, styles.quitButton]}
               onPress={endGame}
             >
-              <Text style={styles.gameButtonText}>Quit</Text>
+              <Text style={styles.controlIcon}>⏹</Text>
             </TouchableOpacity>
           </View>
           
-          <View style={styles.scoreDisplay}>
-            <Text style={styles.currentScoreText}>Score: {score}</Text>
-            <Text style={styles.gemDisplay}>💎 {rewardPoints}</Text>
-            <Text style={styles.heartDisplay}>❤️ {hearts}</Text>
+          {/* Center - Score */}
+          <View style={styles.scoreSection}>
+            <View style={styles.scoreCard}>
+              <Text style={[styles.scoreLabel, { color: colors.accent }]}>SCORE</Text>
+              <Text style={styles.scoreValue}>{score}</Text>
+            </View>
+          </View>
+          
+          {/* Right side - Resources */}
+          <View style={styles.resourcesSection}>
+            <View style={styles.resourceItem}>
+              <Text style={styles.resourceIcon}>💎</Text>
+              <Text style={styles.resourceValue}>{rewardPoints}</Text>
+            </View>
+            <View style={styles.resourceItem}>
+              <Text style={styles.resourceIcon}>❤️</Text>
+              <Text style={styles.resourceValue}>{hearts}</Text>
+            </View>
           </View>
         </View>
         
-        {/* Add power-ups display below the header */}
+        {/* Power-ups display below the game header */}
         <View style={styles.powerUpsContainer}>
           <PowerUpsDisplay />
         </View>
@@ -82,80 +88,37 @@ const Header: React.FC<HeaderProps> = ({
     );
   }
   
+  // When game is not active, show minimal header with just stats
   return (
     <View style={styles.headerContainer}>
-      <View style={[styles.header, { backgroundColor: getHeaderBackgroundColor() }]}>
-        <View style={styles.scoreContainer}>
-          <Text style={styles.scoreText}>Score: {score}</Text>
-          <Text style={styles.scoreText}>High Score: {highScore}</Text>
-          <Text style={styles.rewardPointsText}>💎 {rewardPoints}</Text>
-          <Text style={styles.heartText}>❤️ {hearts}</Text>
-          {isAuthenticated && user && (
-            <Text style={styles.userText}>Welcome, {user.first_name}!</Text>
-          )}
-        </View>
-        
-        <View style={styles.rightContainer}>
-          <View style={styles.gameSettingsContainer}>
-            <TouchableOpacity 
-              style={[
-                styles.difficultyButton,
-                styles.levelButton,
-                { 
-                  borderColor: getLevelColor(),
-                  opacity: (!gameStarted || gameOver) ? 1 : 0.5 
-                }
-              ]}
-              onPress={(!gameStarted || gameOver) ? onLevelPress : undefined}
-              disabled={gameStarted && !gameOver}
-            >
-              <Text style={[
-                styles.difficultyButtonText,
-                { color: getLevelColor() }
-              ]}>
-                Level {level}
-              </Text>
-            </TouchableOpacity>
+      <View style={[styles.header, { backgroundColor: colors.bg }]}>
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Score</Text>
+            <Text style={[styles.statValue, { color: colors.accent }]}>{score}</Text>
           </View>
           
-          {/* Authentication and user buttons */}
-          <View style={styles.authContainer}>
-            <TouchableOpacity 
-              style={[styles.iconButton, styles.shopButton]} 
-              onPress={onShopPress}
-            >
-              <Text style={styles.iconButtonText}>🛒</Text>
-            </TouchableOpacity>
-            {isAuthenticated ? (
-              <>
-                <TouchableOpacity 
-                  style={styles.iconButton} 
-                  onPress={onLeaderboardPress}
-                >
-                  <Text style={styles.iconButtonText}>🏆</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.iconButton} 
-                  onPress={onProfilePress}
-                >
-                  <Text style={styles.iconButtonText}>👤</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity 
-                style={styles.authButton} 
-                onPress={onAuthPress}
-              >
-                <Text style={styles.authButtonText}>Sign In</Text>
-              </TouchableOpacity>
-            )}
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Best</Text>
+            <Text style={[styles.statValue, { color: colors.accent }]}>{highScore}</Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={styles.resourceIcon}>💎</Text>
+            <Text style={styles.statValue}>{rewardPoints}</Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={styles.resourceIcon}>❤️</Text>
+            <Text style={styles.statValue}>{hearts}</Text>
           </View>
         </View>
-      </View>
-      
-      {/* Add power-ups display below the header */}
-      <View style={styles.powerUpsContainer}>
-        <PowerUpsDisplay />
+        
+        {isAuthenticated && user && (
+          <Text style={[styles.welcomeText, { color: colors.accent }]}>
+            Hey, {user.first_name}! 👋
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -168,149 +131,129 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     width: "100%",
-    paddingHorizontal: 20,
-    marginBottom: 5, // Reduced margin for more vertical space
-    paddingVertical: 8, // Added minimal vertical padding
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  statCard: {
+    alignItems: "center",
+    minWidth: 60,
+  },
+  statLabel: {
+    fontSize: 10,
+    color: "rgba(255, 255, 255, 0.6)",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "white",
+  },
+  welcomeText: {
+    fontSize: 12,
+    textAlign: "center",
+    fontWeight: "600",
   },
   gameHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    paddingHorizontal: 20,
-    marginBottom: 10, // Increased margin for better spacing from game board
-    paddingVertical: 12, // Increased vertical padding for more breathing room
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: "rgba(255, 255, 255, 0.15)",
   },
   gameControls: {
     flexDirection: "row",
-    gap: 10,
-  },
-  gameButton: {
-    backgroundColor: "#8B4513", // Brown theme for buttons
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: "#A0522D", // Darker brown border
-  },
-  quitButton: {
-    backgroundColor: "#9C27B0", // Purple for quit button
-    borderColor: "#6A1B99",
-  },
-  gameButtonText: {
-    color: "white", // White text for dark background
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  scoreDisplay: {
-    alignItems: "center",
-  },
-  currentScoreText: {
-    fontSize: 18,
-    color: "white", // Changed from green to white to match other screens
-    fontWeight: "bold",
-  },
-  gemDisplay: {
-    fontSize: 16,
-    color: "#FFD700", // Gold color
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  heartDisplay: {
-    fontSize: 16,
-    color: "#FF1744", // Red color for hearts
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  scoreContainer: {
+    gap: 8,
     flex: 1,
   },
-  scoreText: {
-    fontSize: 18,
-    color: "white", // White text for dark background
-    fontWeight: "bold",
-  },
-  rewardPointsText: {
-    fontSize: 16,
-    color: "#FFD700", // Gold color for reward points
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  heartText: {
-    fontSize: 16,
-    color: "#FF1744", // Red color for hearts
-    fontWeight: "bold",
-    marginTop: 4,
-  },
-  userText: {
-    fontSize: 12,
-    color: "#4CAF50", // Keep green for user text
-    fontWeight: "normal",
-  },
-  rightContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  gameSettingsContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  difficultyButton: {
-    backgroundColor: "#333", // Dark background
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-    borderWidth: 2,
-  },
-  levelButton: {
-    minWidth: 70, // Ensure consistent width for level button
-  },
-  difficultyButtonText: {
-    fontWeight: "bold",
-    fontSize: 12,
-    textAlign: "center",
-    // Color will be set dynamically based on difficulty
-  },
-  authContainer: {
-    flexDirection: "row",
-    gap: 5,
-  },
-  iconButton: {
-    backgroundColor: "#8B4513", // Brown theme
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
+  controlButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#A0522D", // Darker brown border
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 2,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
-  iconButtonText: {
+  pauseButton: {
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    borderColor: "rgba(76, 175, 80, 0.4)",
+  },
+  quitButton: {
+    backgroundColor: "rgba(244, 67, 54, 0.2)",
+    borderColor: "rgba(244, 67, 54, 0.4)",
+  },
+  controlIcon: {
+    fontSize: 18,
+    color: "white",
+  },
+  scoreSection: {
+    flex: 2,
+    alignItems: "center",
+  },
+  scoreCard: {
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center",
+  },
+  scoreLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    letterSpacing: 2,
+    marginBottom: 2,
+  },
+  scoreValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "white",
+  },
+  resourcesSection: {
+    flexDirection: "row",
+    gap: 12,
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  resourceItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 15,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  resourceIcon: {
     fontSize: 16,
   },
-  shopButton: {
-    backgroundColor: "#FF1744", // Red theme for shop
-    borderColor: "#C62828",
-  },
-  authButton: {
-    backgroundColor: "#9C27B0", // Purple theme for auth button
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-  },
-  authButtonText: {
-    color: "white", // White text on green background
+  resourceValue: {
+    fontSize: 14,
     fontWeight: "bold",
+    color: "white",
   },
   powerUpsContainer: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "center",
-    marginBottom: 5, // Reduced margin for more vertical space
+    paddingVertical: 8,
   },
 });

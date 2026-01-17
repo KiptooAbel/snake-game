@@ -1,15 +1,19 @@
-// LevelSelector.tsx - Modal for selecting game level
-import React from "react";
+// LevelSelector.tsx - Horizontal swipeable level selector
+import React, { useRef, useState } from "react";
 import { 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  TouchableWithoutFeedback,
-  ScrollView
+  ScrollView,
+  Dimensions
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useGame } from "@/contexts/GameContext";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = SCREEN_WIDTH * 0.8;
+const CARD_SPACING = 15;
 
 interface LevelSelectorProps {
   onClose: () => void;
@@ -18,350 +22,464 @@ interface LevelSelectorProps {
 const levelInfo = {
   1: {
     name: "LEVEL 1",
-    description: "Open field - Snake wraps around walls",
-    color: ["#4CAF50", "#2E7D32"], // Green gradient
-    backgroundColor: "#1a1a1a", // Dark background
+    title: "Open Field",
+    description: "Snake wraps around walls",
+    color: ["#4CAF50", "#2E7D32"],
+    icon: "🌿",
+    preview: "Classic snake with wrap-around edges",
   },
   2: {
     name: "LEVEL 2", 
-    description: "Walled arena - Hitting walls ends the game",
-    color: ["#8B4513", "#A0522D"], // Brown gradient
-    backgroundColor: "#3E2723", // Brown background
+    title: "Walled Arena",
+    description: "Hitting walls ends the game",
+    color: ["#FF6B35", "#D84315"],
+    icon: "🧱",
+    preview: "Walls are deadly - stay inside!",
   },
   3: {
     name: "LEVEL 3",
-    description: "Maze challenge - L-corners & center barriers",
-    color: ["#9C27B0", "#6A1B99"], // Purple gradient
-    backgroundColor: "#4A148C", // Purple background
+    title: "Maze Challenge",
+    description: "L-corners & center barriers",
+    color: ["#9C27B0", "#6A1B99"],
+    icon: "🏛️",
+    preview: "Navigate through obstacles",
   }
 };
 
 export default function LevelSelector({
   onClose
 }: LevelSelectorProps) {
-  // Get game state and methods from context
-  const { level, setLevel, rewardPoints, isLevelUnlocked, canUnlockLevel, unlockLevel } = useGame();
-  
-  console.log('LevelSelector rendered with current level:', level);
-  
-  // Handle level selection
-  const handleSelectLevel = (newLevel: number) => {
-    console.log('Level selected:', newLevel);
-    
-    // Check if level is unlocked
-    if (!isLevelUnlocked(newLevel)) {
-      console.log('Level is locked');
-      return; // Don't allow selecting locked levels
+  const { level, setLevel, rewardPoints, isLevelUnlocked, canUnlockLevel, unlockLevel, startGame } = useGame();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [activeIndex, setActiveIndex] = useState(level - 1);
+
+  // Handle level selection - start game immediately
+  const handleSelectLevel = (levelNum: number) => {
+    if (!isLevelUnlocked(levelNum)) {
+      return;
     }
     
-    setLevel(newLevel);
+    setLevel(levelNum);
+    // Close the selector and start game immediately
     onClose();
+    setTimeout(() => {
+      startGame();
+    }, 100);
   };
-  
+
   // Handle unlocking a level
   const handleUnlockLevel = (levelNum: number) => {
-    console.log('Attempting to unlock level:', levelNum);
     const success = unlockLevel(levelNum);
     if (success) {
-      console.log('Level unlocked successfully');
       setLevel(levelNum);
       onClose();
+      setTimeout(() => {
+        startGame();
+      }, 100);
     }
   };
-  
-  // Render a level option button
-  const renderLevelOption = (levelOption: keyof typeof levelInfo) => {
-    const isSelected = levelOption === level;
-    const isUnlocked = isLevelUnlocked(levelOption);
-    const canUnlock = canUnlockLevel(levelOption);
-    const { name, color, description } = levelInfo[levelOption];
-    
-    // Determine reward points required for each level
-    const rewardPointsRequired = levelOption === 1 ? 0 : levelOption === 2 ? 50 : 150;
-    
-    console.log(`Rendering level option: ${levelOption}, isSelected: ${isSelected}, currentLevel: ${level}, isUnlocked: ${isUnlocked}, canUnlock: ${canUnlock}`);
-    
+
+  const renderLevelCard = (levelNum: 1 | 2 | 3, index: number) => {
+    const info = levelInfo[levelNum];
+    const isUnlocked = isLevelUnlocked(levelNum);
+    const canUnlock = canUnlockLevel(levelNum);
+    const costMap = { 1: 0, 2: 50, 3: 150 };
+    const cost = costMap[levelNum];
+
     return (
-      <TouchableOpacity
-        key={levelOption}
-        style={[
-          styles.levelOption,
-          isSelected && styles.selectedOption,
-          !isUnlocked && !canUnlock && styles.lockedOption
-        ]}
-        onPress={() => {
-          if (isUnlocked) {
-            handleSelectLevel(levelOption);
-          } else if (canUnlock) {
-            handleUnlockLevel(levelOption);
-          }
-        }}
-        activeOpacity={isUnlocked || canUnlock ? 0.8 : 1}
-        disabled={!isUnlocked && !canUnlock}
-      >
-        <LinearGradient
-          colors={isUnlocked ? color as [string, string] : canUnlock ? ["#FFD700", "#FFA000"] : ["#424242", "#212121"]}
-          style={styles.gradientBackground}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+      <View key={levelNum} style={styles.cardContainer}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => {
+            if (isUnlocked) {
+              handleSelectLevel(levelNum);
+            } else if (canUnlock) {
+              handleUnlockLevel(levelNum);
+            }
+          }}
+          activeOpacity={0.9}
+          disabled={!isUnlocked && !canUnlock}
         >
-          <Text style={[styles.levelText, !isUnlocked && !canUnlock && styles.lockedText]}>
-            {name} {!isUnlocked && (canUnlock ? "💎" : "🔒")}
-          </Text>
-          <Text style={[styles.descriptionText, !isUnlocked && !canUnlock && styles.lockedText]}>
-            {description}
-          </Text>
-          
-          {!isUnlocked && canUnlock && (
-            <Text style={styles.unlockButtonText}>
-              TAP TO UNLOCK - {rewardPointsRequired} 💎
-            </Text>
-          )}
-          
-          {!isUnlocked && !canUnlock && (
-            <Text style={styles.unlockText}>
-              Requires {rewardPointsRequired} gems
-            </Text>
-          )}
-          
-          {isSelected && isUnlocked && (
-            <View style={styles.selectedIndicator} />
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
+          <LinearGradient
+            colors={info.color}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardGradient}
+          >
+            {/* Level Icon */}
+            <Text style={styles.levelIcon}>{info.icon}</Text>
+            
+            {/* Level Number Badge */}
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelBadgeText}>{levelNum}</Text>
+            </View>
+
+            {/* Level Info */}
+            <Text style={styles.levelName}>{info.name}</Text>
+            <Text style={styles.levelTitle}>{info.title}</Text>
+            <Text style={styles.levelDescription}>{info.description}</Text>
+            
+            {/* Preview Text */}
+            <View style={styles.previewContainer}>
+              <Text style={styles.previewText}>{info.preview}</Text>
+            </View>
+
+            {/* Lock Overlay */}
+            {!isUnlocked && (
+              <View style={styles.lockOverlay}>
+                <Text style={styles.lockIcon}>🔒</Text>
+                <Text style={styles.lockText}>
+                  {canUnlock ? `Unlock for ${cost} gems` : `Requires ${cost} gems`}
+                </Text>
+                {canUnlock && (
+                  <View style={styles.unlockButton}>
+                    <Text style={styles.unlockButtonText}>TAP TO UNLOCK</Text>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* Play Button */}
+            {isUnlocked && (
+              <View style={styles.playButton}>
+                <Text style={styles.playButtonText}>▶ PLAY NOW</Text>
+              </View>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
     );
   };
 
   return (
-    <TouchableWithoutFeedback onPress={onClose}>
-      <View style={styles.modalOverlay}>
-        <TouchableWithoutFeedback>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>SELECT LEVEL</Text>
-            
-            <View style={styles.optionsContainer}>
-              {renderLevelOption(1)}
-              {renderLevelOption(2)}
-              {renderLevelOption(3)}
-            </View>
-            
-            <View style={styles.levelDetails}>
-              <Text style={styles.detailsTitle}>YOUR GEMS: 💎 {rewardPoints}</Text>
-              <Text style={styles.detailsSubtitle}>Eat special fruits to earn gems!</Text>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>LEVEL 1:</Text>
-                <Text style={styles.detailText}>Free (Always unlocked)</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>LEVEL 2:</Text>
-                <Text style={styles.detailText}>Cost: 50 gems</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>LEVEL 3:</Text>
-                <Text style={styles.detailText}>Cost: 150 gems</Text>
-              </View>
-              
-              <View style={styles.rewardInfo}>
-                <Text style={styles.rewardInfoTitle}>Special Fruits:</Text>
-                <Text style={styles.rewardInfoText}>💎 Ruby (15th fruit): +10 gems</Text>
-                <Text style={styles.rewardInfoText}>💎 Emerald (30th fruit): +25 gems</Text>
-                <Text style={styles.rewardInfoText}>💎 Diamond (50th fruit): +50 gems</Text>
-              </View>
-            </View>
-            
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-            >
-              <Text style={styles.closeButtonText}>CLOSE</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableWithoutFeedback>
+    <View style={styles.fullScreenContainer}>
+      {/* Background decorations */}
+      <View style={styles.backgroundDecorations}>
+        <View style={[styles.decoration, styles.decoration1]} />
+        <View style={[styles.decoration, styles.decoration2]} />
+        <View style={[styles.decoration, styles.decoration3]} />
       </View>
-    </TouchableWithoutFeedback>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>SELECT LEVEL</Text>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeIcon}>✕</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Instructions */}
+      <View style={styles.instructionsContainer}>
+        <Text style={styles.instructionsText}>Swipe to preview levels • Tap to play</Text>
+        <View style={styles.gemsDisplay}>
+          <Text style={styles.gemsText}>💎 {rewardPoints} gems</Text>
+        </View>
+      </View>
+
+      {/* Horizontal Scrollable Cards */}
+      <View style={styles.cardsSection}>
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          pagingEnabled={false}
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={CARD_WIDTH + CARD_SPACING}
+          snapToAlignment="center"
+          contentContainerStyle={styles.scrollContent}
+          onMomentumScrollEnd={(event) => {
+            const index = Math.round(event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_SPACING));
+            setActiveIndex(index);
+          }}
+        >
+          {renderLevelCard(1, 0)}
+          {renderLevelCard(2, 1)}
+          {renderLevelCard(3, 2)}
+        </ScrollView>
+      </View>
+
+      {/* Level Indicators */}
+      <View style={styles.indicatorsContainer}>
+        {[0, 1, 2].map((index) => (
+          <View
+            key={index}
+            style={[
+              styles.indicator,
+              activeIndex === index && styles.activeIndicator,
+            ]}
+          />
+        ))}
+      </View>
+
+      {/* Info Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerTitle}>Earn Gems by Playing!</Text>
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>💎 Ruby (15th): +10</Text>
+          <Text style={styles.footerText}>💎 Emerald (30th): +25</Text>
+          <Text style={styles.footerText}>💎 Diamond (50th): +50</Text>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: "#111",
+  },
+  backgroundDecorations: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
   },
-  modalContent: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 20,
-    padding: 20,
-    margin: 20,
-    width: '90%',
-    maxHeight: '80%',
-    minHeight: 400,
-    borderWidth: 2,
-    borderColor: '#8B4513',
-    shadowColor: '#8B4513',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 20,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#9C27B0',
-    textAlign: 'center',
-    marginBottom: 20,
-    textShadowColor: '#9C27B0',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 5,
-  },
-  optionsContainer: {
-    marginBottom: 20,
-  },
-  levelOption: {
-    marginBottom: 15,
-    borderRadius: 10,
-    overflow: 'hidden',
-  unlockButtonText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    marginTop: 8,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-  },
-    borderWidth: 2,
-    borderColor: 'transparent',
-    minHeight: 60,
-  },
-  selectedOption: {
-    borderColor: '#8B4513',
-    shadowColor: '#8B4513',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  lockedOption: {
-    opacity: 0.6,
-  },
-  lockedText: {
-    color: 'rgba(255, 255, 255, 0.5)',
-  },
-  unlockText: {
-    fontSize: 12,
-    color: '#FFD700',
-    marginTop: 5,
-    fontStyle: 'italic',
-  },
-  gradientBackground: {
-    padding: 15,
-    position: 'relative',
-  },
-  levelText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 5,
-  },
-  descriptionText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 18,
-  },
-  selectedIndicator: {
+  decoration: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#8B4513',
-    borderWidth: 2,
-    borderColor: 'white',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#4CAF50',
+    opacity: 0.05,
   },
-  levelDetails: {
-    backgroundColor: 'rgba(139, 69, 19, 0.1)',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 69, 19, 0.3)',
+  decoration1: {
+    top: 100,
+    left: -50,
   },
-  detailsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFD700',
-    marginBottom: 5,
-    textAlign: 'center',
+  decoration2: {
+    top: 300,
+    right: -80,
   },
-  detailsSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 15,
-    textAlign: 'center',
-    fontStyle: 'italic',
+  decoration3: {
+    bottom: 100,
+    left: 50,
   },
-  rewardInfo: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(139, 69, 19, 0.3)',
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    zIndex: 1,
   },
-  rewardInfoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#8B4513',
-    marginBottom: 8,
-  },
-  rewardInfoText: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 4,
-    paddingLeft: 10,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    alignItems: 'flex-start',
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#8B4513',
-    width: 80,
-    flexShrink: 0,
-  },
-  detailText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    flex: 1,
-    lineHeight: 18,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "white",
+    letterSpacing: 2,
   },
   closeButton: {
-    backgroundColor: '#8B4513',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: '#A0522D',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  closeButtonText: {
+  closeIcon: {
+    fontSize: 24,
+    color: "white",
+    fontWeight: "bold",
+  },
+  instructionsContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  instructionsText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    marginBottom: 10,
+  },
+  gemsDisplay: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(76, 175, 80, 0.3)',
+  },
+  gemsText: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  cardsSection: {
+    flex: 1,
+    marginTop: 20,
+  },
+  scrollContent: {
+    paddingHorizontal: (SCREEN_WIDTH - CARD_WIDTH) / 2,
+    alignItems: 'center',
+  },
+  cardContainer: {
+    width: CARD_WIDTH,
+    marginHorizontal: CARD_SPACING / 2,
+  },
+  card: {
+    width: '100%',
+    height: 500,
+    borderRadius: 25,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  cardGradient: {
+    flex: 1,
+    padding: 30,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  levelIcon: {
+    fontSize: 80,
+    marginTop: 20,
+  },
+  levelBadge: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  levelBadgeText: {
+    fontSize: 24,
+    fontWeight: 'bold',
     color: 'white',
+  },
+  levelName: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: 'rgba(255, 255, 255, 0.8)',
+    letterSpacing: 2,
+    marginBottom: 5,
+  },
+  levelTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: 'white',
     textAlign: 'center',
+    marginBottom: 10,
+  },
+  levelDescription: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  previewContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderRadius: 15,
+    marginBottom: 30,
+  },
+  previewText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.85)',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  lockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 25,
+  },
+  lockIcon: {
+    fontSize: 60,
+    marginBottom: 15,
+  },
+  lockText: {
+    fontSize: 18,
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  unlockButton: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 25,
+  },
+  unlockButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  playButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  playButtonText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111',
+    letterSpacing: 1,
+  },
+  indicatorsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  indicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  activeIndicator: {
+    width: 24,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: 40,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  footerTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+  },
+  footerText: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
 });
