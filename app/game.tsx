@@ -31,6 +31,7 @@ const GameContent: React.FC<{
       case 1: return "#1a1a1a"; // Dark for level 1
       case 2: return "#3E2723"; // Brown for level 2
       case 3: return "#4A148C"; // Purple for level 3
+      case 4: return "#006064"; // Dark cyan for level 4
       default: return "#1a1a1a";
     }
   };

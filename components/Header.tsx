@@ -28,6 +28,10 @@ const Header: React.FC<HeaderProps> = () => {
         bg: "rgba(26, 10, 46, 0.95)",
         accent: "#BA68C8"
       };
+      case 4: return {
+        bg: "rgba(10, 26, 31, 0.95)",
+        accent: "#00BCD4"
+      };
       default: return {
         bg: "rgba(10, 10, 10, 0.95)",
         accent: "#4CAF50"

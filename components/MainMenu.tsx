@@ -31,6 +31,14 @@ const MainMenu: React.FC<MainMenuProps> = ({
         return "#8B4513"; // Brown for level 2
       case 3:
         return "#9C27B0"; // Purple for level 3
+      case 4:
+        return "#00BCD4"; // Cyan for level 4
+      case 5:
+        return "#FFC107"; // Amber for level 5
+      case 6:
+        return "#E91E63"; // Pink for level 6
+      case 7:
+        return "#FF5722"; // Deep orange for level 7
       default:
         return "#4CAF50";
     }

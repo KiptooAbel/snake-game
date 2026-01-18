@@ -60,7 +60,36 @@ export const useGameDimensions = (level: number = 1) => {
       ];
     }
     
-    // Default position for levels 1 and 2
+    // For level 4, avoid the cross pattern
+    if (level === 4) {
+      // Place snake in upper-left quadrant, away from cross
+      const safeX = Math.floor(gameDimensions.GRID_WIDTH / 4);
+      const safeY = Math.floor(gameDimensions.GRID_HEIGHT / 4);
+      return [
+        { x: safeX, y: safeY },
+        { x: safeX - 1, y: safeY },
+      ];
+    }
+    
+    // For level 6 (spiral), start near top-left but not at edge
+    if (level === 6) {
+      const safeX = Math.floor(gameDimensions.GRID_WIDTH / 3);
+      const safeY = Math.floor(gameDimensions.GRID_HEIGHT / 3);
+      return [
+        { x: safeX, y: safeY },
+        { x: safeX - 1, y: safeY },
+      ];
+    }
+    
+    // For level 7 (random obstacles), use a safe starting zone (top-left corner)
+    if (level === 7) {
+      return [
+        { x: 3, y: 3 },
+        { x: 2, y: 3 },
+      ];
+    }
+    
+    // Default position for levels 1, 2, and 5
     return [
       { x: middleX, y: middleY },
       { x: middleX - 1, y: middleY },

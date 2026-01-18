@@ -258,6 +258,20 @@ const GameBoard: React.FC = () => {
       );
     };
     
+    // Helper function to check level 4 cross obstacles
+    const isOnCrossObstacle = (pos: Position) => {
+      if (level !== 4) return false;
+      const gridWidth = GRID_WIDTH || GRID_SIZE;
+      const gridHeight = GRID_HEIGHT || GRID_SIZE;
+      const centerX = Math.floor(gridWidth / 2);
+      const centerY = Math.floor(gridHeight / 2);
+      const crossThickness = 3;
+      const offset = Math.floor(crossThickness / 2);
+      
+      return (pos.x >= centerX - offset && pos.x <= centerX + offset) ||
+             (pos.y >= centerY - offset && pos.y <= centerY + offset);
+    };
+    
     do {
       newFood = {
         x: Math.floor(Math.random() * (maxX - minX + 1)) + minX,
@@ -268,8 +282,9 @@ const GameBoard: React.FC = () => {
       attempts < maxAttempts && (
         // Check collision with snake
         currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y) ||
-        // Check collision with center obstacles in level 3
-        isOnCenterObstacle(newFood)
+        // Check collision with all level obstacles
+        isOnCenterObstacle(newFood) ||
+        isOnCrossObstacle(newFood)
       )
     );
     
@@ -306,6 +321,12 @@ const GameBoard: React.FC = () => {
         }
       } else if (level === 3) {
         // Level 3: Wrapping walls like level 1, but with center obstacles
+        if (head.x < 0) head.x = (GRID_WIDTH || GRID_SIZE) - 1;
+        if (head.x >= (GRID_WIDTH || GRID_SIZE)) head.x = 0;
+        if (head.y < 0) head.y = (GRID_HEIGHT || GRID_SIZE) - 1;
+        if (head.y >= (GRID_HEIGHT || GRID_SIZE)) head.y = 0;
+      } else if (level === 4) {
+        // Level 4: Wrapping walls
         if (head.x < 0) head.x = (GRID_WIDTH || GRID_SIZE) - 1;
         if (head.x >= (GRID_WIDTH || GRID_SIZE)) head.x = 0;
         if (head.y < 0) head.y = (GRID_HEIGHT || GRID_SIZE) - 1;
@@ -353,8 +374,27 @@ const GameBoard: React.FC = () => {
         }
       }
       
-      // Check for collision with obstacles - REMOVED (no obstacles)
-      // No obstacle collision needed
+      // Check for collision with cross obstacles in level 4
+      if (level === 4) {
+        const gridWidth = GRID_WIDTH || GRID_SIZE;
+        const gridHeight = GRID_HEIGHT || GRID_SIZE;
+        const centerX = Math.floor(gridWidth / 2);
+        const centerY = Math.floor(gridHeight / 2);
+        const crossThickness = 3; // 3 cells thick
+        const offset = Math.floor(crossThickness / 2);
+        
+        const isObstacle = (
+          // Vertical beam of cross
+          (head.x >= centerX - offset && head.x <= centerX + offset) ||
+          // Horizontal beam of cross
+          (head.y >= centerY - offset && head.y <= centerY + offset)
+        );
+        
+        if (isObstacle && !isPowerUpActive('GHOST_MODE')) {
+          handleGameFailure();
+          return;
+        }
+      }
 
       newSnake.unshift(head);
 
@@ -508,6 +548,7 @@ const GameBoard: React.FC = () => {
       case 1: return "#0a1a0a"; // Dark green tint for level 1
       case 2: return "#2E1A10"; // Dark brown for level 2  
       case 3: return "#1A0A2E"; // Dark purple for level 3
+      case 4: return "#0A1A1F"; // Dark cyan for level 4
       default: return "#0a0a0a";
     }
   };
@@ -524,6 +565,7 @@ const GameBoard: React.FC = () => {
         case 1: return 'rgba(76, 175, 80, 0.08)'; // Green
         case 2: return 'rgba(139, 69, 19, 0.08)'; // Brown
         case 3: return 'rgba(156, 39, 176, 0.08)'; // Purple
+        case 4: return 'rgba(0, 188, 212, 0.08)'; // Cyan
         default: return 'rgba(255, 255, 255, 0.05)';
       }
     };
@@ -622,6 +664,47 @@ const GameBoard: React.FC = () => {
     return obstacles;
   };
 
+  // Render cross obstacles for level 4
+  const renderCrossObstacles = () => {
+    const gridWidth = GRID_WIDTH || GRID_SIZE;
+    const gridHeight = GRID_HEIGHT || GRID_SIZE;
+    const centerX = Math.floor(gridWidth / 2);
+    const centerY = Math.floor(gridHeight / 2);
+    const crossThickness = 3;
+    const offset = Math.floor(crossThickness / 2);
+    const obstacles = [];
+
+    for (let x = 0; x < gridWidth; x++) {
+      for (let y = 0; y < gridHeight; y++) {
+        const isObstacle = (
+          (x >= centerX - offset && x <= centerX + offset) ||
+          (y >= centerY - offset && y <= centerY + offset)
+        );
+
+        if (isObstacle) {
+          obstacles.push(
+            <View
+              key={`cross-${x}-${y}`}
+              style={[
+                styles.crossObstacle,
+                {
+                  left: x * CELL_SIZE,
+                  top: y * CELL_SIZE,
+                  width: CELL_SIZE,
+                  height: CELL_SIZE,
+                }
+              ]}
+            >
+              <View style={styles.obstacleGlow} />
+            </View>
+          );
+        }
+      }
+    }
+
+    return obstacles;
+  };
+
   return (
     <GestureDetector gesture={swipeGesture}>
       <View 
@@ -677,6 +760,13 @@ const GameBoard: React.FC = () => {
                 {level === 3 && (
                   <>
                     {renderCenterObstacles()}
+                  </>
+                )}
+                
+                {/* Render cross obstacles for level 4 */}
+                {level === 4 && (
+                  <>
+                    {renderCrossObstacles()}
                   </>
                 )}
                 
@@ -866,6 +956,18 @@ const styles = StyleSheet.create({
     borderColor: "#BA68C8",
     borderRadius: 3,
     shadowColor: "#9C27B0",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  crossObstacle: {
+    position: "absolute",
+    backgroundColor: "#00BCD4", // Cyan color for level 4 obstacles
+    borderWidth: 2,
+    borderColor: "#4DD0E1",
+    borderRadius: 3,
+    shadowColor: "#00BCD4",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 6,

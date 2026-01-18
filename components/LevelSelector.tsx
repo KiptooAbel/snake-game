@@ -19,7 +19,14 @@ interface LevelSelectorProps {
   onClose: () => void;
 }
 
-const levelInfo = {
+const levelInfo: Record<1 | 2 | 3 | 4, {
+  name: string;
+  title: string;
+  description: string;
+  color: [string, string];
+  icon: string;
+  preview: string;
+}> = {
   1: {
     name: "LEVEL 1",
     title: "Open Field",
@@ -43,6 +50,14 @@ const levelInfo = {
     color: ["#9C27B0", "#6A1B99"],
     icon: "🏛️",
     preview: "Navigate through obstacles",
+  },
+  4: {
+    name: "LEVEL 4",
+    title: "Cross Divide",
+    description: "Giant cross pattern obstacles",
+    color: ["#00BCD4", "#0097A7"],
+    icon: "✨",
+    preview: "Navigate around the central cross",
   }
 };
 
@@ -79,11 +94,11 @@ export default function LevelSelector({
     }
   };
 
-  const renderLevelCard = (levelNum: 1 | 2 | 3, index: number) => {
+  const renderLevelCard = (levelNum: 1 | 2 | 3 | 4, index: number) => {
     const info = levelInfo[levelNum];
     const isUnlocked = isLevelUnlocked(levelNum);
     const canUnlock = canUnlockLevel(levelNum);
-    const costMap = { 1: 0, 2: 50, 3: 150 };
+    const costMap = { 1: 0, 2: 50, 3: 150, 4: 300 };
     const cost = costMap[levelNum];
 
     return (
@@ -195,12 +210,13 @@ export default function LevelSelector({
           {renderLevelCard(1, 0)}
           {renderLevelCard(2, 1)}
           {renderLevelCard(3, 2)}
+          {renderLevelCard(4, 3)}
         </ScrollView>
       </View>
 
       {/* Level Indicators */}
       <View style={styles.indicatorsContainer}>
-        {[0, 1, 2].map((index) => (
+        {[0, 1, 2, 3].map((index) => (
           <View
             key={index}
             style={[
